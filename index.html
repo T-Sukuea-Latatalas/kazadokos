@@ -96,6 +96,27 @@
       padding: 12px 14px;
       border-bottom: 1px solid var(--border);
       color: var(--sub);
+      user-select: none;
+    }
+
+    /* ソート可能なヘッダーのスタイル */
+    th.sortable {
+      cursor: pointer;
+      transition: color 0.15s ease;
+    }
+
+    th.sortable:hover {
+      color: var(--text);
+    }
+
+    th.sortable.asc::after {
+      content: ' ↑';
+      color: var(--text);
+    }
+
+    th.sortable.desc::after {
+      content: ' ↓';
+      color: var(--text);
     }
 
     td {
@@ -173,7 +194,7 @@
     <thead>
       <tr>
         <th class="col-word">Word</th>
-        <th class="col-pos">Class</th>
+        <th class="col-pos sortable" id="th-pos">Class</th>
         <th class="col-pron">Pronunciation</th>
         <th class="col-mean">Meaning</th>
       </tr>
@@ -182,23 +203,20 @@
   </table>
 
   <script>
-    // ==============================================================
-    // 設定: 「ウェブに公開」で取得したCSVのURLをここに貼り付けてください
-    // ==============================================================
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
     // A列用 文字置換処理
     function convertKazadok(str) {
       if (!str) return '';
       return str
-        .replace(/ly/gi, (m) => m === 'LY' || m === 'Ly' ? 'V' : 'v') // ly -> v
-        .replace(/ts/gi, (m) => m === 'TS' || m === 'Ts' ? 'Q' : 'q') // ts -> q
-        .replace(/sh/gi, (m) => m === 'SH' || m === 'Sh' ? 'R' : 'r') // sh -> r
-        .replace(/\^/g, '\u0304')                                     // ^ -> ̄ (マクロン)
-        .replace(/´/g, '');                                           // ´ -> 消す
+        .replace(/ly/gi, (m) => m === 'LY' || m === 'Ly' ? 'V' : 'v')
+        .replace(/ts/gi, (m) => m === 'TS' || m === 'Ts' ? 'Q' : 'q')
+        .replace(/sh/gi, (m) => m === 'SH' || m === 'Sh' ? 'R' : 'r')
+        .replace(/\^/g, '\u0304')
+        .replace(/´/g, '');
     }
 
-    // CSV解析パーサー（改行・ダブルクォート対応）
+    // CSV解析パーサー
     function parseCSV(text) {
       const rows = [];
       let row = [];
@@ -235,13 +253,13 @@
     }
 
     let records = [];
+    let sortState = 'none'; // 'none' -> 'asc' -> 'desc'
 
     async function init() {
       const stateEl = document.getElementById('state');
       const tableEl = document.getElementById('table');
 
       try {
-        // キャッシュを防ぐためタイムスタンプパラメータを付与
         const fetchUrl = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + '_ts=' + Date.now();
         const res = await fetch(fetchUrl);
         if (!res.ok) throw new Error();
@@ -249,14 +267,14 @@
         const csvText = await res.text();
         const rows = parseCSV(csvText);
 
-        // 1行目がヘッダー（単語/品詞等）の場合はスキップ
         const dataRows = (rows.length > 0 && (rows[0][0] === '単語' || rows[0][1] === '品詞'))
           ? rows.slice(1)
           : rows;
 
-        records = dataRows.map(r => {
+        records = dataRows.map((r, index) => {
           const raw = r[0] || '';
           return {
+            index: index, // 元の順序を保持
             raw: raw,
             word: convertKazadok(raw),
             pos: r[1] || '',
@@ -265,12 +283,37 @@
           };
         }).filter(item => item.raw !== '');
 
-        render(records);
+        applyView();
         stateEl.style.display = 'none';
         tableEl.style.display = 'table';
       } catch (e) {
         stateEl.textContent = 'Error';
       }
+    }
+
+    // 検索・ソートを適用して表示
+    function applyView() {
+      const q = document.getElementById('filter').value.toLowerCase().trim();
+      
+      // 1. 絞り込み
+      let list = !q ? [...records] : records.filter(item =>
+        item.raw.toLowerCase().includes(q) ||
+        item.word.toLowerCase().includes(q) ||
+        item.pos.toLowerCase().includes(q) ||
+        item.pron.toLowerCase().includes(q) ||
+        item.mean.toLowerCase().includes(q)
+      );
+
+      // 2. 品詞（Class）ソート
+      if (sortState === 'asc') {
+        list.sort((a, b) => a.pos.localeCompare(b.pos, 'ja') || a.index - b.index);
+      } else if (sortState === 'desc') {
+        list.sort((a, b) => b.pos.localeCompare(a.pos, 'ja') || a.index - b.index);
+      } else {
+        list.sort((a, b) => a.index - b.index);
+      }
+
+      render(list);
     }
 
     function render(list) {
@@ -309,22 +352,24 @@
       tbody.appendChild(frag);
     }
 
-    // インクリメンタル検索（単語、発音、品詞、意味で照合）
-    document.getElementById('filter').addEventListener('input', (e) => {
-      const q = e.target.value.toLowerCase().trim();
-      if (!q) {
-        render(records);
-        return;
+    // 「Class」ヘッダークリックによるソート切り替え
+    const thPos = document.getElementById('th-pos');
+    thPos.addEventListener('click', () => {
+      if (sortState === 'none') {
+        sortState = 'asc';
+        thPos.className = 'col-pos sortable asc';
+      } else if (sortState === 'asc') {
+        sortState = 'desc';
+        thPos.className = 'col-pos sortable desc';
+      } else {
+        sortState = 'none';
+        thPos.className = 'col-pos sortable';
       }
-      const filtered = records.filter(item =>
-        item.raw.toLowerCase().includes(q) ||
-        item.word.toLowerCase().includes(q) ||
-        item.pos.toLowerCase().includes(q) ||
-        item.pron.toLowerCase().includes(q) ||
-        item.mean.toLowerCase().includes(q)
-      );
-      render(filtered);
+      applyView();
     });
+
+    // 検索入力時の反映
+    document.getElementById('filter').addEventListener('input', applyView);
 
     init();
   </script>
