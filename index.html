@@ -15,7 +15,8 @@
       --bg: #ffffff;
       --text: #000000;
       --border: #000000;
-      --muted: #666666;
+      --line: #e5e5e5;
+      --sub: #888888;
     }
 
     * {
@@ -27,51 +28,57 @@
     body {
       background-color: var(--bg);
       color: var(--text);
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Yu Gothic", sans-serif;
-      line-height: 1.6;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      padding: 80px 40px;
-      max-width: 1200px;
+      padding: 60px 40px;
+      max-width: 1100px;
       margin: 0 auto;
     }
 
     header {
-      margin-bottom: 60px;
+      margin-bottom: 50px;
       border-bottom: 2px solid var(--border);
-      padding-bottom: 20px;
+      padding-bottom: 16px;
       display: flex;
       justify-content: space-between;
       align-items: baseline;
     }
 
     h1 {
-      font-size: 1.2rem;
-      letter-spacing: 0.2em;
+      font-size: 1.1rem;
+      letter-spacing: 0.25em;
       font-weight: 700;
       text-transform: uppercase;
     }
 
-    .search-box {
+    .count {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
+      color: var(--sub);
+    }
+
+    .search {
       margin-bottom: 40px;
     }
 
-    .search-box input {
+    .search input {
       width: 100%;
       background: transparent;
       border: none;
       border-bottom: 1px solid var(--border);
-      padding: 10px 0;
-      font-size: 1rem;
+      padding: 12px 0;
+      font-size: 0.95rem;
       color: var(--text);
       outline: none;
       border-radius: 0;
       letter-spacing: 0.05em;
     }
 
-    .search-box input::placeholder {
-      color: var(--muted);
-      font-size: 0.85rem;
-      letter-spacing: 0.1em;
+    .search input::placeholder {
+      color: var(--sub);
+      font-size: 0.8rem;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
     }
 
@@ -82,68 +89,69 @@
     }
 
     th {
-      font-size: 0.75rem;
+      font-size: 0.7rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       font-weight: 600;
-      padding: 12px 16px;
+      padding: 12px 14px;
       border-bottom: 1px solid var(--border);
-      color: var(--muted);
+      color: var(--sub);
     }
 
     td {
-      padding: 16px;
-      border-bottom: 1px solid #e0e0e0;
+      padding: 16px 14px;
+      border-bottom: 1px solid var(--line);
       vertical-align: baseline;
       font-size: 0.95rem;
     }
 
     tbody tr:hover {
-      background-color: #f7f7f7;
+      background-color: #f9f9f9;
     }
 
-    /* 独自文字フォント適用列 */
+    /* 独自フォント列 */
     .col-word {
       font-family: 'NotoSansKazadok', sans-serif;
-      font-size: 1.35rem;
+      font-size: 1.4rem;
       letter-spacing: 0.05em;
       white-space: nowrap;
-      width: 25%;
+      width: 28%;
     }
 
     .col-pos {
-      width: 15%;
+      width: 14%;
       font-size: 0.85rem;
       letter-spacing: 0.05em;
     }
 
     .col-pron {
-      width: 25%;
+      width: 24%;
       font-family: "Lucida Console", Monaco, monospace;
       font-size: 0.85rem;
+      letter-spacing: 0.02em;
     }
 
     .col-mean {
-      width: 35%;
+      width: 34%;
     }
 
-    .status {
-      font-size: 0.8rem;
-      letter-spacing: 0.1em;
+    .state {
+      font-size: 0.75rem;
+      letter-spacing: 0.15em;
       text-transform: uppercase;
       padding: 40px 0;
-      color: var(--muted);
+      color: var(--sub);
     }
 
     @media (max-width: 768px) {
       body {
-        padding: 40px 20px;
+        padding: 40px 16px;
       }
       th, td {
         padding: 12px 8px;
       }
       .col-word {
-        font-size: 1.15rem;
+        font-size: 1.2rem;
       }
     }
   </style>
@@ -152,16 +160,16 @@
 
   <header>
     <h1>Kazadok</h1>
-    <span id="count" style="font-size: 0.75rem; letter-spacing: 0.1em; color: var(--muted);"></span>
+    <span id="count" class="count"></span>
   </header>
 
-  <div class="search-box">
-    <input type="text" id="search-input" placeholder="Search..." autocomplete="off">
+  <div class="search">
+    <input type="text" id="filter" placeholder="Search" autocomplete="off">
   </div>
 
-  <div id="status" class="status">Loading...</div>
+  <div id="state" class="state">Loading</div>
 
-  <table id="dictionary-table" style="display: none;">
+  <table id="table" style="display: none;">
     <thead>
       <tr>
         <th class="col-word">Word</th>
@@ -170,129 +178,115 @@
         <th class="col-mean">Meaning</th>
       </tr>
     </thead>
-    <tbody id="dictionary-body"></tbody>
+    <tbody id="tbody"></tbody>
   </table>
 
   <script>
-    // ==========================================
-    // 設定: スプレッドシートの情報
-    // ==========================================
-    // スプレッドシートURLの「/d/」と「/edit」の間にある文字列を入力してください
-    const SPREADSHEET_ID = 'ここにスプレッドシートのIDを入力'; 
-    const SHEET_NAME = '単語';
+    // ==============================================================
+    // 設定: 「ウェブに公開」で取得したCSVのURLをここに貼り付けてください
+    // ==============================================================
+    const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
-    // A列テキストの置換関数
-    function transformKazadokWord(rawText) {
-      if (!rawText) return '';
-      return rawText
-        // ly -> v
-        .replace(/ly/gi, (m) => m === 'LY' || m === 'Ly' ? 'V' : 'v')
-        // ts -> q
-        .replace(/ts/gi, (m) => m === 'TS' || m === 'Ts' ? 'Q' : 'q')
-        // sh -> r
-        .replace(/sh/gi, (m) => m === 'SH' || m === 'Sh' ? 'R' : 'r')
-        // ^ -> ̄ (結合マクロン)
-        .replace(/\^/g, '\u0304')
-        // ´ を消す
-        .replace(/´/g, '');
+    // A列用 文字置換処理
+    function convertKazadok(str) {
+      if (!str) return '';
+      return str
+        .replace(/ly/gi, (m) => m === 'LY' || m === 'Ly' ? 'V' : 'v') // ly -> v
+        .replace(/ts/gi, (m) => m === 'TS' || m === 'Ts' ? 'Q' : 'q') // ts -> q
+        .replace(/sh/gi, (m) => m === 'SH' || m === 'Sh' ? 'R' : 'r') // sh -> r
+        .replace(/\^/g, '\u0304')                                     // ^ -> ̄ (マクロン)
+        .replace(/´/g, '');                                           // ´ -> 消す
     }
 
-    // CSVパーサー（改行やダブルクォートに対応）
+    // CSV解析パーサー（改行・ダブルクォート対応）
     function parseCSV(text) {
       const rows = [];
-      let currentRow = [];
-      let currentVal = '';
-      let insideQuote = false;
+      let row = [];
+      let val = '';
+      let quote = false;
 
       for (let i = 0; i < text.length; i++) {
-        const char = text[i];
-        const nextChar = text[i + 1];
+        const c = text[i];
+        const next = text[i + 1];
 
-        if (char === '"' && insideQuote && nextChar === '"') {
-          currentVal += '"';
+        if (c === '"' && quote && next === '"') {
+          val += '"';
           i++;
-        } else if (char === '"') {
-          insideQuote = !insideQuote;
-        } else if (char === ',' && !insideQuote) {
-          currentRow.push(currentVal.trim());
-          currentVal = '';
-        } else if ((char === '\r' || char === '\n') && !insideQuote) {
-          if (char === '\r' && nextChar === '\n') i++;
-          currentRow.push(currentVal.trim());
-          if (currentRow.some(val => val !== '')) {
-            rows.push(currentRow);
-          }
-          currentRow = [];
-          currentVal = '';
+        } else if (c === '"') {
+          quote = !quote;
+        } else if (c === ',' && !quote) {
+          row.push(val.trim());
+          val = '';
+        } else if ((c === '\r' || c === '\n') && !quote) {
+          if (c === '\r' && next === '\n') i++;
+          row.push(val.trim());
+          if (row.some(item => item !== '')) rows.push(row);
+          row = [];
+          val = '';
         } else {
-          currentVal += char;
+          val += c;
         }
       }
-      if (currentVal || currentRow.length > 0) {
-        currentRow.push(currentVal.trim());
-        if (currentRow.some(val => val !== '')) {
-          rows.push(currentRow);
-        }
+      if (val || row.length > 0) {
+        row.push(val.trim());
+        if (row.some(item => item !== '')) rows.push(row);
       }
       return rows;
     }
 
-    let wordDataList = [];
+    let records = [];
 
-    async function loadData() {
-      const statusEl = document.getElementById('status');
-      const tableEl = document.getElementById('dictionary-table');
-
-      // キャッシュを防ぐためタイムスタンプを付与
-      const queryUrl = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(SHEET_NAME)}&_=${Date.now()}`;
+    async function init() {
+      const stateEl = document.getElementById('state');
+      const tableEl = document.getElementById('table');
 
       try {
-        const response = await fetch(queryUrl);
-        if (!response.ok) throw new Error('Data fetch failed');
-        
-        const csvText = await response.text();
+        // キャッシュを防ぐためタイムスタンプパラメータを付与
+        const fetchUrl = CSV_URL + (CSV_URL.includes('?') ? '&' : '?') + '_ts=' + Date.now();
+        const res = await fetch(fetchUrl);
+        if (!res.ok) throw new Error();
+
+        const csvText = await res.text();
         const rows = parseCSV(csvText);
 
-        // データ行（ヘッダーがある場合は2行目以降）を抽出
-        // 1行目が「単語」などのヘッダーなら切り捨て
-        const dataRows = (rows.length > 0 && (rows[0][0] === '単語' || rows[0][1] === '品詞')) 
-          ? rows.slice(1) 
+        // 1行目がヘッダー（単語/品詞等）の場合はスキップ
+        const dataRows = (rows.length > 0 && (rows[0][0] === '単語' || rows[0][1] === '品詞'))
+          ? rows.slice(1)
           : rows;
 
-        wordDataList = dataRows.map(row => {
-          const rawWord = row[0] || '';
+        records = dataRows.map(r => {
+          const raw = r[0] || '';
           return {
-            rawWord: rawWord,
-            convertedWord: transformKazadokWord(rawWord),
-            pos: row[1] || '',
-            pron: row[2] || '',
-            meaning: row[3] || ''
+            raw: raw,
+            word: convertKazadok(raw),
+            pos: r[1] || '',
+            pron: r[2] || '',
+            mean: r[3] || ''
           };
-        }).filter(item => item.rawWord !== '');
+        }).filter(item => item.raw !== '');
 
-        renderTable(wordDataList);
-        statusEl.style.display = 'none';
+        render(records);
+        stateEl.style.display = 'none';
         tableEl.style.display = 'table';
-      } catch (err) {
-        statusEl.textContent = 'Failed to load data.';
+      } catch (e) {
+        stateEl.textContent = 'Error';
       }
     }
 
-    function renderTable(list) {
-      const tbody = document.getElementById('dictionary-body');
+    function render(list) {
+      const tbody = document.getElementById('tbody');
       const countEl = document.getElementById('count');
       tbody.innerHTML = '';
-      countEl.textContent = `${list.length} WORDS`;
+      countEl.textContent = `${list.length}`;
 
-      const fragment = document.createDocumentFragment();
+      const frag = document.createDocumentFragment();
       list.forEach(item => {
         const tr = document.createElement('tr');
-        
+
         const tdWord = document.createElement('td');
         tdWord.className = 'col-word';
-        tdWord.textContent = item.convertedWord;
-        // ツールチップで変換前のアルファベットも確認可能
-        tdWord.title = item.rawWord;
+        tdWord.textContent = item.word;
+        tdWord.title = item.raw;
 
         const tdPos = document.createElement('td');
         tdPos.className = 'col-pos';
@@ -304,35 +298,35 @@
 
         const tdMean = document.createElement('td');
         tdMean.className = 'col-mean';
-        tdMean.textContent = item.meaning;
+        tdMean.textContent = item.mean;
 
         tr.appendChild(tdWord);
         tr.appendChild(tdPos);
         tr.appendChild(tdPron);
         tr.appendChild(tdMean);
-        fragment.appendChild(tr);
+        frag.appendChild(tr);
       });
-      tbody.appendChild(fragment);
+      tbody.appendChild(frag);
     }
 
-    // 検索入力によるリアルタイム絞り込み
-    document.getElementById('search-input').addEventListener('input', (e) => {
+    // インクリメンタル検索（単語、発音、品詞、意味で照合）
+    document.getElementById('filter').addEventListener('input', (e) => {
       const q = e.target.value.toLowerCase().trim();
       if (!q) {
-        renderTable(wordDataList);
+        render(records);
         return;
       }
-      const filtered = wordDataList.filter(item => 
-        item.rawWord.toLowerCase().includes(q) ||
-        item.convertedWord.toLowerCase().includes(q) ||
+      const filtered = records.filter(item =>
+        item.raw.toLowerCase().includes(q) ||
+        item.word.toLowerCase().includes(q) ||
         item.pos.toLowerCase().includes(q) ||
         item.pron.toLowerCase().includes(q) ||
-        item.meaning.toLowerCase().includes(q)
+        item.mean.toLowerCase().includes(q)
       );
-      renderTable(filtered);
+      render(filtered);
     });
 
-    loadData();
+    init();
   </script>
 </body>
 </html>
