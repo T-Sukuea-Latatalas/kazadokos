@@ -58,32 +58,54 @@
       color: var(--sub);
     }
 
-    .search {
+    /* 検索ボックスとモード切り替え */
+    .search-bar {
+      display: flex;
+      align-items: center;
+      border-bottom: 1px solid var(--border);
       margin-bottom: 24px;
+      gap: 16px;
     }
 
-    .search input {
-      width: 100%;
+    .search-bar input {
+      flex: 1;
       background: transparent;
       border: none;
-      border-bottom: 1px solid var(--border);
       padding: 12px 0;
       font-size: 0.95rem;
       color: var(--text);
       outline: none;
       border-radius: 0;
       letter-spacing: 0.05em;
-      cursor: text;
     }
 
-    .search input::placeholder {
+    .search-bar input::placeholder {
       color: var(--sub);
       font-size: 0.8rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
     }
 
-    /* ソフトウェアキーボード（選択時のみ表示） */
+    .mode-toggle {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      padding: 6px 14px;
+      cursor: pointer;
+      font-weight: 600;
+      outline: none;
+      transition: background-color 0.1s, color 0.1s;
+      white-space: nowrap;
+    }
+
+    .mode-toggle:hover {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    /* ソフトウェアキーボード */
     .keyboard-panel {
       display: none;
       border: 1px solid var(--border);
@@ -161,11 +183,15 @@
     }
 
     .kb-key.key-space {
-      max-width: 260px;
+      max-width: 220px;
+    }
+
+    .kb-key.key-switch {
+      max-width: 100px;
     }
 
     .kb-key.key-clear {
-      max-width: 80px;
+      max-width: 70px;
     }
 
     table {
@@ -277,12 +303,12 @@
     <span id="count" class="count"></span>
   </header>
 
-  <div class="search">
-    <!-- inputmode="none" でスマホやタブレットの標準キーボード起動を抑制 -->
+  <div class="search-bar">
     <input type="text" id="filter" placeholder="Search" autocomplete="off" inputmode="none">
+    <button type="button" id="mode-btn" class="mode-toggle">KAZADOK</button>
   </div>
 
-  <!-- QWERTY ソフトウェアキーボード（SEARCH選択時のみ展開） -->
+  <!-- QWERTY ソフトウェアキーボード -->
   <div id="keyboard" class="keyboard-panel">
     <!-- Row 1 -->
     <div class="kb-row">
@@ -324,6 +350,7 @@
     <!-- Row 4 -->
     <div class="kb-row">
       <button type="button" class="kb-key action-key key-space" data-action="space">SPACE</button>
+      <button type="button" class="kb-key action-key key-switch" data-action="switch-os">STANDARD</button>
       <button type="button" class="kb-key action-key key-clear" data-action="clear">CLEAR</button>
     </div>
   </div>
@@ -345,7 +372,6 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
-    // A列用 文字置換処理
     function convertKazadok(str) {
       if (!str) return '';
       return str
@@ -356,7 +382,6 @@
         .replace(/´/g, '');
     }
 
-    // 検索語句正規化
     function normalizeQuery(str) {
       if (!str) return '';
       return str.toLowerCase()
@@ -368,7 +393,6 @@
         .replace(/´/g, '');
     }
 
-    // CSV解析パーサー
     function parseCSV(text) {
       const rows = [];
       let row = [];
@@ -404,7 +428,6 @@
       return rows;
     }
 
-    // CORS回避付きフェッチ
     async function fetchCSVWithFallback(url) {
       const target = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
       
@@ -541,23 +564,49 @@
 
     const filterInput = document.getElementById('filter');
     const keyboardEl = document.getElementById('keyboard');
+    const modeBtn = document.getElementById('mode-btn');
+
+    // キーボードモード状態 ('kazadok' または 'standard')
+    let currentMode = 'kazadok';
+
+    function setKeyboardMode(mode) {
+      currentMode = mode;
+      if (mode === 'kazadok') {
+        modeBtn.textContent = 'KAZADOK';
+        filterInput.setAttribute('inputmode', 'none');
+        keyboardEl.classList.add('active');
+      } else {
+        modeBtn.textContent = 'STANDARD';
+        filterInput.removeAttribute('inputmode');
+        filterInput.setAttribute('inputmode', 'text');
+        keyboardEl.classList.remove('active');
+      }
+      filterInput.focus();
+    }
+
+    modeBtn.addEventListener('click', () => {
+      setKeyboardMode(currentMode === 'kazadok' ? 'standard' : 'kazadok');
+    });
 
     filterInput.addEventListener('input', applyView);
 
-    // SEARCH欄がフォーカス／タップされたときのみキーボードを表示
     filterInput.addEventListener('focus', () => {
-      keyboardEl.classList.add('active');
+      if (currentMode === 'kazadok') {
+        keyboardEl.classList.add('active');
+      }
     });
 
-    // キーボード操作時にSEARCH欄のフォーカスが外れるのを防止
+    // 独自キーボード操作時のフォーカス外れ防止
     keyboardEl.addEventListener('pointerdown', (e) => {
       e.preventDefault();
     });
 
-    // SEARCH欄およびキーボード以外の領域をタップ／クリックしたらキーボードを閉じる
+    // 外側クリックでキーボードを非表示（KAZADOKモード時）
     document.addEventListener('pointerdown', (e) => {
-      const isInside = filterInput.contains(e.target) || keyboardEl.contains(e.target);
-      if (!isInside) {
+      const isInside = filterInput.contains(e.target) || 
+                       keyboardEl.contains(e.target) || 
+                       modeBtn.contains(e.target);
+      if (!isInside && currentMode === 'kazadok') {
         keyboardEl.classList.remove('active');
       }
     });
@@ -590,6 +639,9 @@
       } else if (action === 'clear') {
         filterInput.value = '';
         filterInput.setSelectionRange(0, 0);
+      } else if (action === 'switch-os') {
+        setKeyboardMode('standard');
+        return;
       }
 
       filterInput.focus();
