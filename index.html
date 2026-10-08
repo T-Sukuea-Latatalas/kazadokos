@@ -59,7 +59,7 @@
     }
 
     .search {
-      margin-bottom: 40px;
+      margin-bottom: 20px;
     }
 
     .search input {
@@ -82,6 +82,91 @@
       text-transform: uppercase;
     }
 
+    /* ソフトウェアキーボード */
+    .keyboard-panel {
+      display: none;
+      border: 1px solid var(--border);
+      padding: 20px;
+      margin-bottom: 40px;
+      background: var(--bg);
+      user-select: none;
+    }
+
+    .keyboard-panel.active {
+      display: block;
+    }
+
+    .kb-row {
+      display: flex;
+      justify-content: center;
+      gap: 6px;
+      margin-bottom: 6px;
+    }
+
+    .kb-row:last-child {
+      margin-bottom: 0;
+    }
+
+    .kb-key {
+      flex: 1;
+      max-width: 58px;
+      height: 52px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      outline: none;
+      transition: background-color 0.1s, color 0.1s;
+    }
+
+    .kb-key:hover {
+      background: var(--text);
+      color: var(--bg);
+    }
+
+    .kb-key:hover .kb-sub {
+      color: var(--bg);
+    }
+
+    .kb-sub {
+      font-size: 0.65rem;
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      line-height: 1;
+      margin-bottom: 3px;
+      color: var(--sub);
+      letter-spacing: 0.05em;
+    }
+
+    .kb-main {
+      font-family: 'NotoSansKazadok', sans-serif;
+      font-size: 1.25rem;
+      line-height: 1;
+    }
+
+    /* 特殊アクションキー */
+    .kb-key.action-key {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
+      font-weight: 600;
+    }
+
+    .kb-key.key-del {
+      max-width: 70px;
+    }
+
+    .kb-key.key-space {
+      max-width: 240px;
+    }
+
+    .kb-key.key-close {
+      max-width: 90px;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
@@ -99,7 +184,6 @@
       user-select: none;
     }
 
-    /* ソート可能なヘッダーのスタイル */
     th.sortable {
       cursor: pointer;
       transition: color 0.15s ease;
@@ -130,7 +214,6 @@
       background-color: #f9f9f9;
     }
 
-    /* 独自フォント列 */
     .col-word {
       font-family: 'NotoSansKazadok', sans-serif;
       font-size: 1.4rem;
@@ -174,6 +257,15 @@
       .col-word {
         font-size: 1.2rem;
       }
+      .kb-key {
+        height: 44px;
+      }
+      .kb-main {
+        font-size: 1rem;
+      }
+      .kb-sub {
+        font-size: 0.55rem;
+      }
     }
   </style>
 </head>
@@ -186,6 +278,52 @@
 
   <div class="search">
     <input type="text" id="filter" placeholder="Search" autocomplete="off">
+  </div>
+
+  <!-- QWERTY ソフトウェアキーボード -->
+  <div id="keyboard" class="keyboard-panel">
+    <!-- Row 1 -->
+    <div class="kb-row">
+      <button type="button" class="kb-key" data-char="ts"><span class="kb-sub">ts</span><span class="kb-main">q</span></button>
+      <button type="button" class="kb-key" data-char="w"><span class="kb-sub">w</span><span class="kb-main">w</span></button>
+      <button type="button" class="kb-key" data-char="e"><span class="kb-sub">e</span><span class="kb-main">e</span></button>
+      <button type="button" class="kb-key" data-char="sh"><span class="kb-sub">sh</span><span class="kb-main">r</span></button>
+      <button type="button" class="kb-key" data-char="t"><span class="kb-sub">t</span><span class="kb-main">t</span></button>
+      <button type="button" class="kb-key" data-char="y"><span class="kb-sub">y</span><span class="kb-main">y</span></button>
+      <button type="button" class="kb-key" data-char="u"><span class="kb-sub">u</span><span class="kb-main">u</span></button>
+      <button type="button" class="kb-key" data-char="i"><span class="kb-sub">i</span><span class="kb-main">i</span></button>
+      <button type="button" class="kb-key" data-char="o"><span class="kb-sub">o</span><span class="kb-main">o</span></button>
+      <button type="button" class="kb-key" data-char="p"><span class="kb-sub">p</span><span class="kb-main">p</span></button>
+      <button type="button" class="kb-key" data-char="-"><span class="kb-sub">-</span><span class="kb-main">&#772;</span></button>
+    </div>
+    <!-- Row 2 -->
+    <div class="kb-row">
+      <button type="button" class="kb-key" data-char="a"><span class="kb-sub">a</span><span class="kb-main">a</span></button>
+      <button type="button" class="kb-key" data-char="s"><span class="kb-sub">s</span><span class="kb-main">s</span></button>
+      <button type="button" class="kb-key" data-char="d"><span class="kb-sub">d</span><span class="kb-main">d</span></button>
+      <button type="button" class="kb-key" data-char="f"><span class="kb-sub">f</span><span class="kb-main">f</span></button>
+      <button type="button" class="kb-key" data-char="g"><span class="kb-sub">g</span><span class="kb-main">g</span></button>
+      <button type="button" class="kb-key" data-char="h"><span class="kb-sub">h</span><span class="kb-main">h</span></button>
+      <button type="button" class="kb-key" data-char="j"><span class="kb-sub">j</span><span class="kb-main">j</span></button>
+      <button type="button" class="kb-key" data-char="k"><span class="kb-sub">k</span><span class="kb-main">k</span></button>
+      <button type="button" class="kb-key" data-char="l"><span class="kb-sub">l</span><span class="kb-main">l</span></button>
+    </div>
+    <!-- Row 3 -->
+    <div class="kb-row">
+      <button type="button" class="kb-key" data-char="z"><span class="kb-sub">z</span><span class="kb-main">z</span></button>
+      <button type="button" class="kb-key" data-char="x"><span class="kb-sub">x</span><span class="kb-main">x</span></button>
+      <button type="button" class="kb-key" data-char="c"><span class="kb-sub">c</span><span class="kb-main">c</span></button>
+      <button type="button" class="kb-key" data-char="ly"><span class="kb-sub">ly</span><span class="kb-main">v</span></button>
+      <button type="button" class="kb-key" data-char="b"><span class="kb-sub">b</span><span class="kb-main">b</span></button>
+      <button type="button" class="kb-key" data-char="n"><span class="kb-sub">n</span><span class="kb-main">n</span></button>
+      <button type="button" class="kb-key" data-char="m"><span class="kb-sub">m</span><span class="kb-main">m</span></button>
+      <button type="button" class="kb-key action-key key-del" data-action="backspace">DEL</button>
+    </div>
+    <!-- Row 4 -->
+    <div class="kb-row">
+      <button type="button" class="kb-key action-key key-space" data-action="space">SPACE</button>
+      <button type="button" class="kb-key action-key key-close" data-action="close">CLOSE</button>
+    </div>
   </div>
 
   <div id="state" class="state">Loading</div>
@@ -213,6 +351,18 @@
         .replace(/ts/gi, (m) => m === 'TS' || m === 'Ts' ? 'Q' : 'q')
         .replace(/sh/gi, (m) => m === 'SH' || m === 'Sh' ? 'R' : 'r')
         .replace(/\^/g, '\u0304')
+        .replace(/´/g, '');
+    }
+
+    // 検索語句正規化（ts/q, sh/r, ly/v, -/^/̄ の相互一致用）
+    function normalizeQuery(str) {
+      if (!str) return '';
+      return str.toLowerCase()
+        .replace(/ly/g, 'v')
+        .replace(/ts/g, 'q')
+        .replace(/sh/g, 'r')
+        .replace(/-/g, '^')
+        .replace(/\u0304/g, '^')
         .replace(/´/g, '');
     }
 
@@ -253,7 +403,7 @@
     }
 
     let records = [];
-    let sortState = 'none'; // 'none' -> 'asc' -> 'desc'
+    let sortState = 'none';
 
     async function init() {
       const stateEl = document.getElementById('state');
@@ -274,9 +424,10 @@
         records = dataRows.map((r, index) => {
           const raw = r[0] || '';
           return {
-            index: index, // 元の順序を保持
+            index: index,
             raw: raw,
             word: convertKazadok(raw),
+            normalizedRaw: normalizeQuery(raw),
             pos: r[1] || '',
             pron: r[2] || '',
             mean: r[3] || ''
@@ -291,20 +442,22 @@
       }
     }
 
-    // 検索・ソートを適用して表示
     function applyView() {
-      const q = document.getElementById('filter').value.toLowerCase().trim();
-      
+      const rawInput = document.getElementById('filter').value.trim();
+      const qNorm = normalizeQuery(rawInput);
+      const qLower = rawInput.toLowerCase();
+
       // 1. 絞り込み
-      let list = !q ? [...records] : records.filter(item =>
-        item.raw.toLowerCase().includes(q) ||
-        item.word.toLowerCase().includes(q) ||
-        item.pos.toLowerCase().includes(q) ||
-        item.pron.toLowerCase().includes(q) ||
-        item.mean.toLowerCase().includes(q)
+      let list = !rawInput ? [...records] : records.filter(item =>
+        item.normalizedRaw.includes(qNorm) ||
+        item.raw.toLowerCase().includes(qLower) ||
+        item.word.toLowerCase().includes(qLower) ||
+        item.pos.toLowerCase().includes(qLower) ||
+        item.pron.toLowerCase().includes(qLower) ||
+        item.mean.toLowerCase().includes(qLower)
       );
 
-      // 2. 品詞（Class）ソート
+      // 2. 品詞ソート
       if (sortState === 'asc') {
         list.sort((a, b) => a.pos.localeCompare(b.pos, 'ja') || a.index - b.index);
       } else if (sortState === 'desc') {
@@ -352,7 +505,7 @@
       tbody.appendChild(frag);
     }
 
-    // 「Class」ヘッダークリックによるソート切り替え
+    // ソート制御
     const thPos = document.getElementById('th-pos');
     thPos.addEventListener('click', () => {
       if (sortState === 'none') {
@@ -368,10 +521,44 @@
       applyView();
     });
 
-    // 検索入力時の反映
-    document.getElementById('filter').addEventListener('input', applyView);
+    const filterInput = document.getElementById('filter');
+    const keyboardEl = document.getElementById('keyboard');
 
-    init();
-  </script>
-</body>
-</html>
+    // 検索入力時の反映
+    filterInput.addEventListener('input', applyView);
+
+    // SEARCH欄にフォーカスされたらキーボードを表示
+    filterInput.addEventListener('focus', () => {
+      keyboardEl.classList.add('active');
+    });
+
+    // キーボード上のボタン押下時にinputのフォーカス外れを防ぐ
+    keyboardEl.addEventListener('mousedown', (e) => {
+      e.preventDefault();
+    });
+
+    // キーボードのクリック処理
+    keyboardEl.addEventListener('click', (e) => {
+      const btn = e.target.closest('.kb-key');
+      if (!btn) return;
+
+      const char = btn.getAttribute('data-char');
+      const action = btn.getAttribute('data-action');
+      const start = filterInput.selectionStart;
+      const end = filterInput.selectionEnd;
+      let val = filterInput.value;
+
+      if (char) {
+        filterInput.value = val.slice(0, start) + char + val.slice(end);
+        filterInput.selectionStart = filterInput.selectionEnd = start + char.length;
+      } else if (action === 'backspace') {
+        if (start === end && start > 0) {
+          filterInput.value = val.slice(0, start - 1) + val.slice(end);
+          filterInput.selectionStart = filterInput.selectionEnd = start - 1;
+        } else if (start !== end) {
+          filterInput.value = val.slice(0, start) + val.slice(end);
+          filterInput.selectionStart = filterInput.selectionEnd = start;
+        }
+      } else if (action === 'space') {
+        filterInput.value = val.slice(0, start) + ' ' + val.slice(end);
+        filterInput.selectio
