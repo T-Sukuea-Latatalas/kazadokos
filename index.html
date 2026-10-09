@@ -18,6 +18,7 @@
       --line: #e5e5e5;
       --sub: #888888;
       --detail-bg: #fafafa;
+      --sticky-offset: 72px;
     }
 
     * {
@@ -60,7 +61,7 @@
       text-transform: uppercase;
     }
 
-    /* 画面上部固定コントロールバー */
+    /* 画面上部固定バー */
     .sticky-bar {
       position: sticky;
       top: 0;
@@ -161,26 +162,60 @@
 
     td {
       padding: 16px 14px;
-      vertical-align: top;
       font-size: 0.95rem;
     }
 
+    /* 単語データ行 */
     tr.word-row {
       cursor: pointer;
-      border-bottom: 1px solid var(--line);
       transition: background-color 0.15s ease;
     }
 
-    tr.word-row:hover {
+    tr.word-row:hover,
+    tr.word-row.hovered {
       background-color: #f9f9f9;
+    }
+
+    /* 語義が1つだけの場合は上下中央揃え */
+    tr.word-row.single-sense td {
+      vertical-align: middle;
+      border-bottom: 1px solid var(--line);
+    }
+
+    /* 語義が複数ある場合は上揃え */
+    tr.word-row.multi-sense td {
+      vertical-align: top;
+    }
+
+    /* 単語の最終行の区切り線 */
+    tr.word-row.last-sub-row td {
+      border-bottom: 1px solid var(--line);
+    }
+
+    /* 枠内で品詞が異なる場合の横線区切り */
+    tr.word-row.pos-divider td.col-pos,
+    tr.word-row.pos-divider td.col-mean {
+      border-top: 1px solid var(--line);
     }
 
     tr.word-row.expanded {
       background-color: #f2f2f2;
-      border-bottom-color: transparent;
     }
 
-    /* 詳細展開行 */
+    tr.word-row.expanded td {
+      border-bottom-color: transparent !important;
+    }
+
+    /* 品詞スクロール追従（Sticky）表示 */
+    .sticky-pos {
+      position: sticky;
+      top: var(--sticky-offset);
+      display: inline-block;
+      font-size: 0.85rem;
+      letter-spacing: 0.05em;
+    }
+
+    /* 詳細アコーディオン展開枠 */
     tr.detail-row td {
       padding: 0;
       border-bottom: 1px solid var(--line);
@@ -192,7 +227,6 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* アコーディオンアニメーション用ラッパー */
     .detail-wrapper {
       display: grid;
       grid-template-rows: 0fr;
@@ -214,23 +248,35 @@
       gap: 16px;
     }
 
+    .detail-group {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .detail-group:not(:last-child) {
+      padding-bottom: 14px;
+      border-bottom: 1px solid #eaeaea;
+    }
+
+    .detail-group-title {
+      font-size: 0.7rem;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      font-weight: 700;
+      color: var(--sub);
+    }
+
     .detail-item {
       display: flex;
       flex-direction: column;
-      gap: 4px;
+      gap: 3px;
     }
 
-    .detail-item:not(:last-child) {
-      padding-bottom: 12px;
-      border-bottom: 1px solid #ececec;
-    }
-
-    .detail-sub-heading {
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
+    .detail-mean-title {
+      font-size: 0.8rem;
       font-weight: 600;
-      color: var(--sub);
+      color: var(--text);
     }
 
     .detail-body {
@@ -256,9 +302,6 @@
 
     .col-pos {
       width: 14%;
-      font-size: 0.85rem;
-      letter-spacing: 0.05em;
-      white-space: pre-wrap;
       line-height: 1.6;
     }
 
@@ -267,7 +310,6 @@
       font-family: "Lucida Console", Monaco, monospace;
       font-size: 0.85rem;
       letter-spacing: 0.02em;
-      white-space: pre-wrap;
       line-height: 1.6;
     }
 
@@ -286,6 +328,9 @@
     }
 
     @media (max-width: 768px) {
+      :root {
+        --sticky-offset: 108px;
+      }
       body {
         padding: 30px 16px;
       }
@@ -341,7 +386,6 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
-    // A列用 置換処理（^ -> ̄、´ -> 消去 のみ）
     function convertKazadok(str) {
       if (!str) return '';
       return str
@@ -349,7 +393,6 @@
         .replace(/´/g, '');
     }
 
-    // 検索用: A列のq, r, vを本来の発音(ts, sh, ly)に復元
     function restorePhonemes(str) {
       if (!str) return '';
       return str
@@ -362,7 +405,6 @@
         .replace(/´/g, '');
     }
 
-    // 検索語句正規化（長音記号のゆらぎ吸収）
     function normalizeQuery(str) {
       if (!str) return '';
       return str.toLowerCase()
@@ -371,7 +413,6 @@
         .replace(/´/g, '');
     }
 
-    // CSVパーサー
     function parseCSV(text) {
       const rows = [];
       let row = [];
@@ -407,7 +448,6 @@
       return rows;
     }
 
-    // CORSフォールバック取得
     async function fetchCSVWithFallback(url) {
       const target = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
       
@@ -444,7 +484,7 @@
           ? rows.slice(1)
           : rows;
 
-        // 単語（A列）ごとにグループ化
+        // 単語ごとにグループ化
         const groupedMap = new Map();
 
         dataRows.forEach(r => {
@@ -471,6 +511,33 @@
           }
         });
 
+        // 品詞ごとの整理 ＆ 発音の自動引き継ぎ処理
+        groupedMap.forEach(item => {
+          // 代表発音（最初に見つかった非空の発音）
+          const fallbackPron = item.senses.find(s => s.pron)?.pron || '';
+          item.mainPron = fallbackPron;
+
+          // 2つ目以降で発音が空なら自動補完
+          item.senses.forEach(s => {
+            if (!s.pron) s.pron = fallbackPron;
+          });
+
+          // 同じ品詞を離さずにまとめる（グループ化）
+          const posMap = new Map();
+          item.senses.forEach(s => {
+            const posKey = s.pos || '—';
+            if (!posMap.has(posKey)) {
+              posMap.set(posKey, []);
+            }
+            posMap.get(posKey).push(s);
+          });
+
+          item.posGroups = Array.from(posMap.entries()).map(([pos, senses]) => ({
+            pos: pos === '—' ? '' : pos,
+            senses: senses
+          }));
+        });
+
         records = Array.from(groupedMap.values());
 
         applyView();
@@ -487,7 +554,6 @@
       const qNorm = normalizeQuery(rawInput);
       const qLower = rawInput.toLowerCase();
 
-      // 検索照合（生データq, r, vは除外し、復元した単語または各語義のテキストに一致するか判定）
       let list = !rawInput ? [...records] : records.filter(item => {
         if (item.restoredWord.includes(qNorm)) return true;
         return item.senses.some(s =>
@@ -498,17 +564,16 @@
         );
       });
 
-      // 代表品詞によるソート
       if (sortState === 'asc') {
         list.sort((a, b) => {
-          const posA = a.senses[0]?.pos || '';
-          const posB = b.senses[0]?.pos || '';
+          const posA = a.posGroups[0]?.pos || '';
+          const posB = b.posGroups[0]?.pos || '';
           return posA.localeCompare(posB, 'ja') || a.id - b.id;
         });
       } else if (sortState === 'desc') {
         list.sort((a, b) => {
-          const posA = a.senses[0]?.pos || '';
-          const posB = b.senses[0]?.pos || '';
+          const posA = a.posGroups[0]?.pos || '';
+          const posB = b.posGroups[0]?.pos || '';
           return posB.localeCompare(posA, 'ja') || a.id - b.id;
         });
       } else {
@@ -525,52 +590,72 @@
       countEl.textContent = `${list.length} BOLI`;
 
       const frag = document.createDocumentFragment();
+
       list.forEach(item => {
-        // 表示用テキストの整形
-        const posText = item.senses.map(s => s.pos).filter(Boolean).join('\n');
-        
-        // 発音（重複排除して表示）
-        const prons = [...new Set(item.senses.map(s => s.pron).filter(Boolean))];
-        const pronText = prons.join('\n');
+        const totalSenses = item.senses.length;
+        const totalGroups = item.posGroups.length;
+        const isSingleSense = totalSenses === 1;
 
-        // 意味（複数ある場合は連番付与）
-        let meanText = '';
-        if (item.senses.length === 1) {
-          meanText = item.senses[0].mean;
-        } else {
-          meanText = item.senses
-            .map((s, idx) => `${idx + 1}. ${s.mean}`)
-            .join('\n');
-        }
+        const wordRows = [];
 
-        // メイン行
-        const trWord = document.createElement('tr');
-        trWord.className = 'word-row';
-        trWord.id = `word-${item.id}`;
+        // 各品詞グループごとに行を生成
+        item.posGroups.forEach((group, gIndex) => {
+          const tr = document.createElement('tr');
+          tr.className = `word-row ${isSingleSense ? 'single-sense' : 'multi-sense'}`;
+          tr.dataset.wordId = item.id;
 
-        const tdWord = document.createElement('td');
-        tdWord.className = 'col-word';
-        tdWord.textContent = item.word;
-        tdWord.title = item.raw;
+          if (gIndex > 0) {
+            tr.classList.add('pos-divider'); // 異なる品詞の間に横線
+          }
+          if (gIndex === totalGroups - 1) {
+            tr.classList.add('last-sub-row'); // 単語の最後の行
+          }
 
-        const tdPos = document.createElement('td');
-        tdPos.className = 'col-pos';
-        tdPos.textContent = posText;
+          // 最初の一回だけ「Boli」と「発音」を出力（複数品詞ならrowspanで結合）
+          if (gIndex === 0) {
+            const tdWord = document.createElement('td');
+            tdWord.className = 'col-word';
+            tdWord.textContent = item.word;
+            tdWord.title = item.raw;
+            if (totalGroups > 1) tdWord.rowSpan = totalGroups;
+            tr.appendChild(tdWord);
+          }
 
-        const tdPron = document.createElement('td');
-        tdPron.className = 'col-pron';
-        tdPron.textContent = pronText;
+          // 品詞セル（スクロール時に上部に追従固定）
+          const tdPos = document.createElement('td');
+          tdPos.className = 'col-pos';
+          const stickyPos = document.createElement('div');
+          stickyPos.className = 'sticky-pos';
+          stickyPos.textContent = group.pos;
+          tdPos.appendChild(stickyPos);
+          tr.appendChild(tdPos);
 
-        const tdMean = document.createElement('td');
-        tdMean.className = 'col-mean';
-        tdMean.textContent = meanText;
+          // 発音セル（最初の一回のみ出力）
+          if (gIndex === 0) {
+            const tdPron = document.createElement('td');
+            tdPron.className = 'col-pron';
+            tdPron.textContent = item.mainPron;
+            if (totalGroups > 1) tdPron.rowSpan = totalGroups;
+            tr.appendChild(tdPron);
+          }
 
-        trWord.appendChild(tdWord);
-        trWord.appendChild(tdPos);
-        trWord.appendChild(tdPron);
-        trWord.appendChild(tdMean);
+          // 意味セル
+          const tdMean = document.createElement('td');
+          tdMean.className = 'col-mean';
+          if (group.senses.length === 1) {
+            tdMean.textContent = group.senses[0].mean;
+          } else {
+            tdMean.textContent = group.senses
+              .map((s, idx) => `${idx + 1}. ${s.mean}`)
+              .join('\n');
+          }
+          tr.appendChild(tdMean);
 
-        // 詳細・ニュアンス展開行
+          wordRows.push(tr);
+          frag.appendChild(tr);
+        });
+
+        // 詳細・ニュアンス行
         const trDetail = document.createElement('tr');
         trDetail.className = 'detail-row';
         trDetail.id = `detail-${item.id}`;
@@ -587,70 +672,81 @@
         const content = document.createElement('div');
         content.className = 'detail-content';
 
-        // 各語義ごとの詳細・ニュアンスを展開
-        item.senses.forEach((s, idx) => {
-          const detailItem = document.createElement('div');
-          detailItem.className = 'detail-item';
+        // 品詞グループごとに詳細をまとめて整理
+        item.posGroups.forEach(group => {
+          const detailGroup = document.createElement('div');
+          detailGroup.className = 'detail-group';
 
-          // 複数ある場合は見出しに品詞や意味を添える
-          if (item.senses.length > 1) {
-            const head = document.createElement('div');
-            head.className = 'detail-sub-heading';
-            head.textContent = `${idx + 1}. ${s.pos ? `[${s.pos}] ` : ''}${s.mean}`;
-            detailItem.appendChild(head);
-          } else {
-            const head = document.createElement('div');
-            head.className = 'detail-sub-heading';
-            head.textContent = 'Detail / Nuance';
-            detailItem.appendChild(head);
+          if (totalGroups > 1 || group.pos) {
+            const gTitle = document.createElement('div');
+            gTitle.className = 'detail-group-title';
+            gTitle.textContent = group.pos ? `[ ${group.pos} ]` : 'General';
+            detailGroup.appendChild(gTitle);
           }
 
-          const body = document.createElement('div');
-          if (s.detail.trim()) {
-            body.className = 'detail-body';
-            body.textContent = s.detail;
-          } else {
-            body.className = 'detail-empty';
-            body.textContent = '-';
-          }
-          detailItem.appendChild(body);
+          group.senses.forEach((s, sIdx) => {
+            const detailItem = document.createElement('div');
+            detailItem.className = 'detail-item';
 
-          content.appendChild(detailItem);
+            if (group.senses.length > 1) {
+              const mTitle = document.createElement('div');
+              mTitle.className = 'detail-mean-title';
+              mTitle.textContent = `${sIdx + 1}. ${s.mean}`;
+              detailItem.appendChild(mTitle);
+            }
+
+            const body = document.createElement('div');
+            if (s.detail.trim()) {
+              body.className = 'detail-body';
+              body.textContent = s.detail;
+            } else {
+              body.className = 'detail-empty';
+              body.textContent = '-';
+            }
+            detailItem.appendChild(body);
+            detailGroup.appendChild(detailItem);
+          });
+
+          content.appendChild(detailGroup);
         });
 
         inner.appendChild(content);
         wrapper.appendChild(inner);
         tdDetail.appendChild(wrapper);
         trDetail.appendChild(tdDetail);
+        frag.appendChild(trDetail);
 
-        // タップ開閉イベント
-        const toggleRow = () => {
+        // トグル開閉イベント設定
+        const toggleAll = () => {
           const isOpen = trDetail.classList.contains('expanded');
           if (isOpen) {
             trDetail.classList.remove('expanded');
-            trWord.classList.remove('expanded');
+            wordRows.forEach(r => r.classList.remove('expanded'));
           } else {
             trDetail.classList.add('expanded');
-            trWord.classList.add('expanded');
+            wordRows.forEach(r => r.classList.add('expanded'));
           }
         };
 
-        trWord.addEventListener('click', toggleRow);
-        trDetail.addEventListener('click', toggleRow);
-
-        frag.appendChild(trWord);
-        frag.appendChild(trDetail);
+        wordRows.forEach(r => {
+          r.addEventListener('click', toggleAll);
+          // 複数行にまたがる単語のホバー連動
+          r.addEventListener('mouseenter', () => wordRows.forEach(row => row.classList.add('hovered')));
+          r.addEventListener('mouseleave', () => wordRows.forEach(row => row.classList.remove('hovered')));
+        });
+        trDetail.addEventListener('click', toggleAll);
       });
+
       tbody.appendChild(frag);
     }
 
-    // 全て開く
+    // 全開
     document.getElementById('btn-open-all').addEventListener('click', () => {
       document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.add('expanded'));
       document.querySelectorAll('tr.detail-row').forEach(tr => tr.classList.add('expanded'));
     });
 
-    // すべて閉じる
+    // 全閉
     document.getElementById('btn-close-all').addEventListener('click', () => {
       document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.remove('expanded'));
       document.querySelectorAll('tr.detail-row').forEach(tr => tr.classList.remove('expanded'));
@@ -672,7 +768,6 @@
       applyView();
     });
 
-    // 検索入力時の反映
     document.getElementById('filter').addEventListener('input', applyView);
 
     init();
