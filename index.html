@@ -17,6 +17,7 @@
       --border: #000000;
       --line: #e5e5e5;
       --sub: #888888;
+      --detail-bg: #fafafa;
       --sticky-offset: 72px;
     }
 
@@ -122,11 +123,17 @@
       color: var(--bg);
     }
 
-    /* テーブル */
+    /* テーブルコンテナ */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       text-align: left;
+      table-layout: fixed;
     }
 
     th {
@@ -138,6 +145,7 @@
       border-bottom: 1px solid var(--border);
       color: var(--sub);
       user-select: none;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.3s ease;
     }
 
     th.sortable {
@@ -159,12 +167,38 @@
       color: var(--text);
     }
 
+    /* 列幅の制御（拡大前: 4列） */
+    .col-word { width: 26%; }
+    .col-pos  { width: 14%; }
+    .col-pron { width: 24%; }
+    .col-mean { width: 36%; }
+    .col-detail {
+      width: 0%;
+      padding: 0;
+      opacity: 0;
+      overflow: hidden;
+      border-bottom-color: transparent;
+    }
+
+    /* 拡大時（5列にスムーズ移行） */
+    table.has-expanded .col-word { width: 20%; }
+    table.has-expanded .col-pos  { width: 12%; }
+    table.has-expanded .col-pron { width: 18%; }
+    table.has-expanded .col-mean { width: 25%; }
+    table.has-expanded .col-detail {
+      width: 25%;
+      padding: 12px 14px;
+      opacity: 1;
+      border-bottom-color: var(--border);
+    }
+
     td {
       padding: 16px 14px;
       font-size: 0.95rem;
+      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
     }
 
-    /* 行スタイル */
+    /* 単語データ行 */
     tr.word-row {
       cursor: pointer;
       transition: background-color 0.15s ease;
@@ -175,39 +209,59 @@
       background-color: #f9f9f9;
     }
 
-    tr.word-row.expanded {
+    tr.word-row.expanded,
+    tr.word-row.expanded:hover {
       background-color: #f6f6f6;
     }
 
-    /* 語義が1つだけの場合は全体が中央揃え */
-    tr.word-row.single-sense td {
-      vertical-align: middle;
-      border-bottom: 1px solid var(--line);
-    }
-
-    /* 語義が複数ある場合の配置 */
-    tr.word-row.multi-sense td {
-      vertical-align: top;
-    }
-
-    /* 発音欄・単語欄は枠内で常に縦方向中央に配置 */
-    td.col-pron,
+    /* 単語全体の上下中央揃え */
     td.col-word {
+      font-family: 'NotoSansKazadok', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      vertical-align: middle; /* 枠内で縦中央 */
+    }
+
+    /* 発音欄の上下中央揃え */
+    td.col-pron {
+      font-family: "Lucida Console", Monaco, monospace;
+      font-size: 0.85rem;
+      letter-spacing: 0.02em;
+      line-height: 1.6;
+      vertical-align: middle; /* 2つ目以降空欄のため枠内で縦中央 */
+    }
+
+    /* 品詞・意味・ニュアンスの垂直位置 */
+    td.col-pos {
+      vertical-align: top;
+      line-height: 1.6;
+    }
+
+    td.col-mean {
+      vertical-align: top;
+      white-space: pre-wrap;
+      line-height: 1.6;
+    }
+
+    /* 1つしか意味がない行は全体を上下中央揃え */
+    tr.word-row.single-sense td {
       vertical-align: middle !important;
     }
 
-    /* 単語ブロックの最終行の区切り線 */
+    /* 単語の最終行の区切り線 */
     tr.word-row.last-sub-row td {
-      border-bottom: 1px solid var(--border);
+      border-bottom: 1px solid var(--line);
     }
 
-    /* 枠内で品詞が異なる場合の横線区切り */
+    /* 枠内で異なる品詞間の横線区切り */
     tr.word-row.pos-divider td.col-pos,
-    tr.word-row.pos-divider td.col-mean {
+    tr.word-row.pos-divider td.col-mean,
+    tr.word-row.pos-divider td.col-detail {
       border-top: 1px solid var(--line);
     }
 
-    /* 品詞スクロール追従表示 */
+    /* 品詞スクロール追従（Sticky）表示 */
     .sticky-pos {
       position: sticky;
       top: var(--sticky-offset);
@@ -216,79 +270,37 @@
       letter-spacing: 0.05em;
     }
 
-    /* 列幅 */
-    .col-word {
-      font-family: 'NotoSansKazadok', sans-serif;
-      font-size: 1.4rem;
-      letter-spacing: 0.05em;
-      white-space: nowrap;
-      width: 20%;
+    /* ニュアンス列（詳細展開セル） */
+    td.col-detail {
+      vertical-align: top;
+      padding: 0;
+      overflow: hidden;
+      background-color: transparent;
     }
 
-    .col-pos {
-      width: 12%;
-      line-height: 1.6;
+    tr.word-row.expanded td.col-detail {
+      padding: 16px 14px;
     }
 
-    .col-pron {
-      width: 18%;
-      font-family: "Lucida Console", Monaco, monospace;
-      font-size: 0.85rem;
-      letter-spacing: 0.02em;
-      line-height: 1.6;
-    }
-
-    .col-mean {
-      width: 50%;
-    }
-
-    /* 意味 ＆ ニュアンス横並びコンテナ */
-    .mean-container {
-      display: flex;
-      align-items: baseline;
-      width: 100%;
-    }
-
-    .mean-text {
-      flex: 1;
-      min-width: 0;
-      line-height: 1.6;
+    /* ニュアンス表示用アニメーションラッパー */
+    .detail-wrapper {
+      max-width: 0;
+      opacity: 0;
+      transform: translateX(-8px);
+      transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                  opacity 0.25s ease,
+                  transform 0.25s ease;
+      overflow: hidden;
       white-space: pre-wrap;
-    }
-
-    /* ニュアンスの横スライド展開ドロワー */
-    .detail-drawer {
-      display: grid;
-      grid-template-columns: 0fr;
-      transition: grid-template-columns 0.3s cubic-bezier(0.16, 1, 0.3, 1);
-      overflow: hidden;
-    }
-
-    tr.word-row.expanded .detail-drawer {
-      grid-template-columns: 1fr;
-    }
-
-    .detail-inner {
-      min-width: 0;
-      overflow: hidden;
-    }
-
-    .detail-box {
-      padding-left: 20px;
-      margin-left: 20px;
-      border-left: 1px solid var(--border);
-      font-size: 0.88rem;
+      font-size: 0.9rem;
       line-height: 1.6;
       color: var(--text);
-      white-space: pre-wrap;
-      opacity: 0;
-      transition: opacity 0.2s ease 0.08s;
-      width: max-content;
-      max-width: 380px;
     }
 
-    tr.word-row.expanded .detail-box {
+    tr.word-row.expanded .detail-wrapper {
+      max-width: 600px;
       opacity: 1;
+      transform: translateX(0);
     }
 
     .detail-empty {
@@ -326,18 +338,6 @@
       .col-word {
         font-size: 1.2rem;
       }
-      .mean-container {
-        flex-direction: column;
-        gap: 6px;
-      }
-      .detail-box {
-        margin-left: 0;
-        padding-left: 12px;
-        border-left: 2px solid var(--border);
-        margin-top: 4px;
-        max-width: 100%;
-        width: 100%;
-      }
     }
   </style>
 </head>
@@ -360,17 +360,20 @@
 
   <div id="state" class="state">Loading</div>
 
-  <table id="table" style="display: none;">
-    <thead>
-      <tr>
-        <th class="col-word">Boli</th>
-        <th class="col-pos sortable" id="th-pos">Class</th>
-        <th class="col-pron">Pronunciation</th>
-        <th class="col-mean">Meaning / Nuance</th>
-      </tr>
-    </thead>
-    <tbody id="tbody"></tbody>
-  </table>
+  <div class="table-container">
+    <table id="table" style="display: none;">
+      <thead>
+        <tr>
+          <th class="col-word">Boli</th>
+          <th class="col-pos sortable" id="th-pos">Class</th>
+          <th class="col-pron">Pronunciation</th>
+          <th class="col-mean">Meaning</th>
+          <th class="col-detail">Detail</th>
+        </tr>
+      </thead>
+      <tbody id="tbody"></tbody>
+    </table>
+  </div>
 
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
@@ -473,7 +476,6 @@
           ? rows.slice(1)
           : rows;
 
-        // 単語ごとにグループ化
         const groupedMap = new Map();
 
         dataRows.forEach(r => {
@@ -500,17 +502,15 @@
           }
         });
 
-        // 品詞グループ化 ＆ 発音の自動引き継ぎ
         groupedMap.forEach(item => {
           const fallbackPron = item.senses.find(s => s.pron)?.pron || '';
           item.mainPron = fallbackPron;
 
-          // 2つ目以降が空欄の場合は自動補完
           item.senses.forEach(s => {
             if (!s.pron) s.pron = fallbackPron;
           });
 
-          // 同じ品詞をまとめる
+          // 同じ品詞をまとめてグループ化
           const posMap = new Map();
           item.senses.forEach(s => {
             const posKey = s.pos || '—';
@@ -573,6 +573,7 @@
 
     function render(list) {
       const tbody = document.getElementById('tbody');
+      const table = document.getElementById('table');
       const countEl = document.getElementById('count');
       tbody.innerHTML = '';
       countEl.textContent = `${list.length} BOLI`;
@@ -581,120 +582,99 @@
 
       list.forEach(item => {
         const totalSenses = item.senses.length;
+        const totalGroups = item.posGroups.length;
         const isSingleSense = totalSenses === 1;
+
         const wordRows = [];
 
-        let currentSenseIndex = 0;
-
         item.posGroups.forEach((group, gIndex) => {
-          group.senses.forEach((sense, sIndex) => {
-            const isFirstRowOfWord = (gIndex === 0 && sIndex === 0);
-            const isFirstRowOfPos = (sIndex === 0);
-            const isLastRowOfWord = (currentSenseIndex === totalSenses - 1);
+          const tr = document.createElement('tr');
+          tr.className = `word-row ${isSingleSense ? 'single-sense' : 'multi-sense'}`;
+          tr.dataset.wordId = item.id;
 
-            const tr = document.createElement('tr');
-            tr.className = `word-row ${isSingleSense ? 'single-sense' : 'multi-sense'}`;
-            tr.dataset.wordId = item.id;
+          if (gIndex > 0) {
+            tr.classList.add('pos-divider'); // 枠内の異なる品詞間に横線
+          }
+          if (gIndex === totalGroups - 1) {
+            tr.classList.add('last-sub-row');
+          }
 
-            // 品詞が変わる最初の行に横線ボーダー
-            if (gIndex > 0 && isFirstRowOfPos) {
-              tr.classList.add('pos-divider');
-            }
+          // [単語]（Boli）: rowspanで結合し、枠内で上下中央揃え
+          if (gIndex === 0) {
+            const tdWord = document.createElement('td');
+            tdWord.className = 'col-word';
+            tdWord.textContent = item.word;
+            tdWord.title = item.raw;
+            if (totalGroups > 1) tdWord.rowSpan = totalGroups;
+            tr.appendChild(tdWord);
+          }
 
-            // 単語全体の最後の行に下線ボーダー
-            if (isLastRowOfWord) {
-              tr.classList.add('last-sub-row');
-            }
+          // [品詞]（Class）
+          const tdPos = document.createElement('td');
+          tdPos.className = 'col-pos';
+          const stickyPos = document.createElement('div');
+          stickyPos.className = 'sticky-pos';
+          stickyPos.textContent = group.pos;
+          tdPos.appendChild(stickyPos);
+          tr.appendChild(tdPos);
 
-            // 単語（Boli）セル: 最初の1回のみ、枠全体を縦結合(rowspan)して中央配置
-            if (isFirstRowOfWord) {
-              const tdWord = document.createElement('td');
-              tdWord.className = 'col-word';
-              tdWord.textContent = item.word;
-              tdWord.title = item.raw;
-              if (totalSenses > 1) tdWord.rowSpan = totalSenses;
-              tr.appendChild(tdWord);
-            }
+          // [発音]（Pronunciation）: rowspanで結合し、枠内で上下中央揃え
+          if (gIndex === 0) {
+            const tdPron = document.createElement('td');
+            tdPron.className = 'col-pron';
+            tdPron.textContent = item.mainPron;
+            if (totalGroups > 1) tdPron.rowSpan = totalGroups;
+            tr.appendChild(tdPron);
+          }
 
-            // 品詞セル: その品詞グループの最初の行のみ出力し、同じ品詞内を縦結合(rowspan)
-            if (isFirstRowOfPos) {
-              const tdPos = document.createElement('td');
-              tdPos.className = 'col-pos';
-              if (group.senses.length > 1) tdPos.rowSpan = group.senses.length;
+          // [意味]（Meaning）
+          const tdMean = document.createElement('td');
+          tdMean.className = 'col-mean';
+          if (group.senses.length === 1) {
+            tdMean.textContent = group.senses[0].mean;
+          } else {
+            tdMean.textContent = group.senses
+              .map((s, idx) => `${idx + 1}. ${s.mean}`)
+              .join('\n');
+          }
+          tr.appendChild(tdMean);
 
-              const stickyPos = document.createElement('div');
-              stickyPos.className = 'sticky-pos';
-              stickyPos.textContent = group.pos;
-              tdPos.appendChild(stickyPos);
-              tr.appendChild(tdPos);
-            }
+          // [ニュアンス]（Detail / Nuance）: 各意味の真横に対応して配置
+          const tdDetail = document.createElement('td');
+          tdDetail.className = 'col-detail';
 
-            // 発音セル: 最初の1回のみ、枠全体を縦結合(rowspan)して縦方向中央配置
-            if (isFirstRowOfWord) {
-              const tdPron = document.createElement('td');
-              tdPron.className = 'col-pron';
-              tdPron.textContent = item.mainPron;
-              if (totalSenses > 1) tdPron.rowSpan = totalSenses;
-              tr.appendChild(tdPron);
-            }
+          const detailWrapper = document.createElement('div');
+          detailWrapper.className = 'detail-wrapper';
 
-            // 意味 ＆ ニュアンスセル（横並び）
-            const tdMean = document.createElement('td');
-            tdMean.className = 'col-mean';
+          if (group.senses.length === 1) {
+            const detailText = group.senses[0].detail.trim();
+            detailWrapper.textContent = detailText || '-';
+            if (!detailText) detailWrapper.className += ' detail-empty';
+          } else {
+            detailWrapper.textContent = group.senses
+              .map((s, idx) => `${idx + 1}. ${s.detail.trim() || '-'}`)
+              .join('\n');
+          }
 
-            const meanContainer = document.createElement('div');
-            meanContainer.className = 'mean-container';
+          tdDetail.appendChild(detailWrapper);
+          tr.appendChild(tdDetail);
 
-            // 意味テキスト（複数ある場合は連番付与）
-            const meanText = document.createElement('div');
-            meanText.className = 'mean-text';
-            meanText.textContent = (group.senses.length > 1) ? `${sIndex + 1}. ${sense.mean}` : sense.mean;
-
-            // ニュアンスの横展開ドロワー
-            const drawer = document.createElement('div');
-            drawer.className = 'detail-drawer';
-
-            const inner = document.createElement('div');
-            inner.className = 'detail-inner';
-
-            const box = document.createElement('div');
-            box.className = 'detail-box';
-            if (sense.detail && sense.detail.trim()) {
-              box.textContent = sense.detail.trim();
-            } else {
-              box.textContent = '-';
-              box.classList.add('detail-empty');
-            }
-
-            inner.appendChild(box);
-            drawer.appendChild(inner);
-
-            meanContainer.appendChild(meanText);
-            meanContainer.appendChild(drawer);
-            tdMean.appendChild(meanContainer);
-            tr.appendChild(tdMean);
-
-            wordRows.push(tr);
-            frag.appendChild(tr);
-
-            currentSenseIndex++;
-          });
+          wordRows.push(tr);
+          frag.appendChild(tr);
         });
 
-        // クリックでその単語のすべての行のニュアンス枠を同時開閉
-        const toggleAll = () => {
+        // 単語枠の拡大・縮小トグル処理
+        const toggleWord = () => {
           const isExpanded = wordRows[0].classList.contains('expanded');
-          wordRows.forEach(r => {
-            if (isExpanded) {
-              r.classList.remove('expanded');
-            } else {
-              r.classList.add('expanded');
-            }
-          });
+          wordRows.forEach(r => r.classList.toggle('expanded', !isExpanded));
+
+          // 1つでも開いている行があればテーブル全体にhas-expandedを付与
+          const anyExpanded = tbody.querySelectorAll('tr.word-row.expanded').length > 0;
+          table.classList.toggle('has-expanded', anyExpanded);
         };
 
         wordRows.forEach(r => {
-          r.addEventListener('click', toggleAll);
+          r.addEventListener('click', toggleWord);
           r.addEventListener('mouseenter', () => wordRows.forEach(row => row.classList.add('hovered')));
           r.addEventListener('mouseleave', () => wordRows.forEach(row => row.classList.remove('hovered')));
         });
@@ -703,14 +683,16 @@
       tbody.appendChild(frag);
     }
 
-    // 全て開く
+    // 全開
     document.getElementById('btn-open-all').addEventListener('click', () => {
       document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.add('expanded'));
+      document.getElementById('table').classList.add('has-expanded');
     });
 
-    // すべて閉じる
+    // 全閉
     document.getElementById('btn-close-all').addEventListener('click', () => {
       document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.remove('expanded'));
+      document.getElementById('table').classList.remove('has-expanded');
     });
 
     // 品詞ソート
