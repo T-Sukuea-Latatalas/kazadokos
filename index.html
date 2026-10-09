@@ -17,8 +17,11 @@
       --border: #000000;
       --line: #e5e5e5;
       --sub: #888888;
-      --detail-bg: #fafafa;
       --sticky-offset: 72px;
+
+      /* グリッド列幅: 未展開時(4列) と 展開時(5列) */
+      --cols-collapsed: 26% 14% 22% 38% 0fr;
+      --cols-expanded:  20% 12% 18% 25% 25%;
     }
 
     * {
@@ -70,7 +73,7 @@
       padding-top: 10px;
       padding-bottom: 20px;
       border-bottom: 1px solid var(--border);
-      margin-bottom: 30px;
+      margin-bottom: 20px;
       display: flex;
       align-items: center;
       gap: 20px;
@@ -98,170 +101,129 @@
       text-transform: uppercase;
     }
 
-    .actions {
-      display: flex;
-      gap: 8px;
-    }
-
-    .btn {
+    /* 統合されたOPEN/CLOSEトグルボタン */
+    .btn-toggle {
       background: var(--bg);
       border: 1px solid var(--border);
       color: var(--text);
       font-size: 0.65rem;
       letter-spacing: 0.12em;
-      padding: 8px 14px;
+      padding: 8px 16px;
       cursor: pointer;
       font-weight: 600;
       outline: none;
-      transition: background-color 0.1s, color 0.1s;
+      transition: background-color 0.15s, color 0.15s;
       white-space: nowrap;
       text-transform: uppercase;
+      min-width: 95px;
+      text-align: center;
     }
 
-    .btn:hover {
+    .btn-toggle:hover {
       background: var(--text);
       color: var(--bg);
     }
 
-    /* テーブルコンテナ */
-    .table-container {
+    /* 辞書一覧コンテナ */
+    .dict-container {
       width: 100%;
-      overflow-x: auto;
+      border-top: 1px solid var(--border);
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      text-align: left;
-      table-layout: fixed;
+    /* 見出し行（ヘッダー） */
+    .dict-header {
+      display: grid;
+      grid-template-columns: var(--cols-collapsed);
+      border-bottom: 1px solid var(--border);
+      transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+      user-select: none;
     }
 
-    th {
+    .dict-container.has-expanded .dict-header {
+      grid-template-columns: var(--cols-expanded);
+    }
+
+    .th-cell {
       font-size: 0.7rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
       font-weight: 600;
       padding: 12px 14px;
-      border-bottom: 1px solid var(--border);
       color: var(--sub);
-      user-select: none;
-      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s ease, padding 0.3s ease;
+      overflow: hidden;
+      white-space: nowrap;
     }
 
-    th.sortable {
+    .th-cell.sortable {
       cursor: pointer;
       transition: color 0.15s ease;
     }
 
-    th.sortable:hover {
+    .th-cell.sortable:hover {
       color: var(--text);
     }
 
-    th.sortable.asc::after {
+    .th-cell.sortable.asc::after {
       content: ' ↑';
       color: var(--text);
     }
 
-    th.sortable.desc::after {
+    .th-cell.sortable.desc::after {
       content: ' ↓';
       color: var(--text);
     }
 
-    /* 列幅の制御（拡大前: 4列） */
-    .col-word { width: 26%; }
-    .col-pos  { width: 14%; }
-    .col-pron { width: 24%; }
-    .col-mean { width: 36%; }
-    .col-detail {
-      width: 0%;
-      padding: 0;
-      opacity: 0;
-      overflow: hidden;
-      border-bottom-color: transparent;
+    /* 単語カード（枠全体） */
+    .word-card {
+      display: grid;
+      grid-template-columns: var(--cols-collapsed);
+      border-bottom: 1px solid var(--line); /* 枠同士を完全に1本線で区切る */
+      cursor: pointer;
+      transition: grid-template-columns 0.28s cubic-bezier(0.16, 1, 0.3, 1),
+                  background-color 0.15s ease;
+      background-color: var(--bg);
     }
 
-    /* 拡大時（5列にスムーズ移行） */
-    table.has-expanded .col-word { width: 20%; }
-    table.has-expanded .col-pos  { width: 12%; }
-    table.has-expanded .col-pron { width: 18%; }
-    table.has-expanded .col-mean { width: 25%; }
-    table.has-expanded .col-detail {
-      width: 25%;
-      padding: 12px 14px;
-      opacity: 1;
-      border-bottom-color: var(--border);
+    .word-card:hover {
+      background-color: #fafafa;
     }
 
-    td {
+    .word-card.expanded {
+      grid-template-columns: var(--cols-expanded);
+      background-color: #f7f7f7;
+    }
+
+    /* 各セルの基本スタイル */
+    .cell {
       padding: 16px 14px;
       font-size: 0.95rem;
-      transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), background-color 0.15s ease;
     }
 
-    /* 単語データ行 */
-    tr.word-row {
-      cursor: pointer;
-      transition: background-color 0.15s ease;
-    }
-
-    tr.word-row:hover,
-    tr.word-row.hovered {
-      background-color: #f9f9f9;
-    }
-
-    tr.word-row.expanded,
-    tr.word-row.expanded:hover {
-      background-color: #f6f6f6;
-    }
-
-    /* 単語全体の上下中央揃え */
-    td.col-word {
+    /* [単語]（Boli）: 枠内で完全上下中央揃え */
+    .cell-word {
       font-family: 'NotoSansKazadok', sans-serif;
       font-size: 1.4rem;
       letter-spacing: 0.05em;
       white-space: nowrap;
-      vertical-align: middle; /* 枠内で縦中央 */
+      align-self: center; /* 縦方向中央 */
     }
 
-    /* 発音欄の上下中央揃え */
-    td.col-pron {
+    /* [発音]（Pronunciation）: 枠内で完全上下中央揃え */
+    .cell-pron {
       font-family: "Lucida Console", Monaco, monospace;
       font-size: 0.85rem;
       letter-spacing: 0.02em;
       line-height: 1.6;
-      vertical-align: middle; /* 2つ目以降空欄のため枠内で縦中央 */
+      align-self: center; /* 縦方向中央 */
     }
 
-    /* 品詞・意味・ニュアンスの垂直位置 */
-    td.col-pos {
-      vertical-align: top;
+    /* [品詞]（Class） */
+    .cell-pos {
       line-height: 1.6;
+      align-self: start;
     }
 
-    td.col-mean {
-      vertical-align: top;
-      white-space: pre-wrap;
-      line-height: 1.6;
-    }
-
-    /* 1つしか意味がない行は全体を上下中央揃え */
-    tr.word-row.single-sense td {
-      vertical-align: middle !important;
-    }
-
-    /* 単語の最終行の区切り線 */
-    tr.word-row.last-sub-row td {
-      border-bottom: 1px solid var(--line);
-    }
-
-    /* 枠内で異なる品詞間の横線区切り */
-    tr.word-row.pos-divider td.col-pos,
-    tr.word-row.pos-divider td.col-mean,
-    tr.word-row.pos-divider td.col-detail {
-      border-top: 1px solid var(--line);
-    }
-
-    /* 品詞スクロール追従（Sticky）表示 */
+    /* 品詞スクロール追従（Sticky） */
     .sticky-pos {
       position: sticky;
       top: var(--sticky-offset);
@@ -270,35 +232,27 @@
       letter-spacing: 0.05em;
     }
 
-    /* ニュアンス列（詳細展開セル） */
-    td.col-detail {
-      vertical-align: top;
-      padding: 0;
-      overflow: hidden;
-      background-color: transparent;
-    }
-
-    tr.word-row.expanded td.col-detail {
-      padding: 16px 14px;
-    }
-
-    /* ニュアンス表示用アニメーションラッパー */
-    .detail-wrapper {
-      max-width: 0;
-      opacity: 0;
-      transform: translateX(-8px);
-      transition: max-width 0.3s cubic-bezier(0.16, 1, 0.3, 1),
-                  opacity 0.25s ease,
-                  transform 0.25s ease;
-      overflow: hidden;
+    /* [意味]（Meaning） */
+    .cell-mean {
       white-space: pre-wrap;
-      font-size: 0.9rem;
       line-height: 1.6;
+      align-self: start;
+    }
+
+    /* [ニュアンス]（Detail / Nuance） */
+    .cell-detail {
+      white-space: pre-wrap;
+      line-height: 1.6;
+      align-self: start;
+      overflow: hidden;
+      opacity: 0;
+      transform: translateX(-10px);
+      transition: opacity 0.25s ease, transform 0.25s ease;
+      font-size: 0.9rem;
       color: var(--text);
     }
 
-    tr.word-row.expanded .detail-wrapper {
-      max-width: 600px;
+    .word-card.expanded .cell-detail {
       opacity: 1;
       transform: translateX(0);
     }
@@ -306,6 +260,11 @@
     .detail-empty {
       color: var(--sub);
       font-style: italic;
+    }
+
+    /* 異なる品詞同士の境界線（枠内の横線区切り） */
+    .pos-divider {
+      border-top: 1px solid var(--line);
     }
 
     .state {
@@ -319,6 +278,8 @@
     @media (max-width: 768px) {
       :root {
         --sticky-offset: 108px;
+        --cols-collapsed: 28% 16% 22% 34% 0fr;
+        --cols-expanded:  20% 14% 18% 24% 24%;
       }
       body {
         padding: 30px 16px;
@@ -329,13 +290,10 @@
         gap: 12px;
         padding-bottom: 14px;
       }
-      .actions {
-        justify-content: flex-end;
-      }
-      th, td {
+      .cell, .th-cell {
         padding: 12px 8px;
       }
-      .col-word {
+      .cell-word {
         font-size: 1.2rem;
       }
     }
@@ -348,31 +306,27 @@
     <span id="count" class="count"></span>
   </header>
 
+  <!-- 画面上部固定バー: 検索バー + 統合トグルボタン -->
   <div class="sticky-bar">
     <div class="search-box">
       <input type="text" id="filter" placeholder="Search" autocomplete="off">
     </div>
-    <div class="actions">
-      <button type="button" id="btn-open-all" class="btn">Open All</button>
-      <button type="button" id="btn-close-all" class="btn">Close All</button>
-    </div>
+    <button type="button" id="btn-toggle-all" class="btn-toggle">Open All</button>
   </div>
 
   <div id="state" class="state">Loading</div>
 
-  <div class="table-container">
-    <table id="table" style="display: none;">
-      <thead>
-        <tr>
-          <th class="col-word">Boli</th>
-          <th class="col-pos sortable" id="th-pos">Class</th>
-          <th class="col-pron">Pronunciation</th>
-          <th class="col-mean">Meaning</th>
-          <th class="col-detail">Detail</th>
-        </tr>
-      </thead>
-      <tbody id="tbody"></tbody>
-    </table>
+  <div id="dict-container" class="dict-container" style="display: none;">
+    <!-- 見出し行 -->
+    <div class="dict-header">
+      <div class="th-cell">Boli</div>
+      <div class="th-cell sortable" id="th-pos">Class</div>
+      <div class="th-cell">Pronunciation</div>
+      <div class="th-cell">Meaning</div>
+      <div class="th-cell">Detail</div>
+    </div>
+    <!-- 単語リスト出力先 -->
+    <div id="dict-body"></div>
   </div>
 
   <script>
@@ -463,10 +417,11 @@
 
     let records = [];
     let sortState = 'none';
+    let isAllExpanded = false; // 一括開閉の状態
 
     async function init() {
       const stateEl = document.getElementById('state');
-      const tableEl = document.getElementById('table');
+      const dictContainer = document.getElementById('dict-container');
 
       try {
         const csvText = await fetchCSVWithFallback(CSV_URL);
@@ -503,9 +458,11 @@
         });
 
         groupedMap.forEach(item => {
+          // 代表発音（最初に見つかった非空の発音）
           const fallbackPron = item.senses.find(s => s.pron)?.pron || '';
           item.mainPron = fallbackPron;
 
+          // 2つ目以降で発音が空なら自動補完
           item.senses.forEach(s => {
             if (!s.pron) s.pron = fallbackPron;
           });
@@ -530,7 +487,7 @@
 
         applyView();
         stateEl.style.display = 'none';
-        tableEl.style.display = 'table';
+        dictContainer.style.display = 'block';
       } catch (e) {
         console.error(e);
         stateEl.textContent = 'Error: Failed to load data.';
@@ -572,127 +529,127 @@
     }
 
     function render(list) {
-      const tbody = document.getElementById('tbody');
-      const table = document.getElementById('table');
+      const dictBody = document.getElementById('dict-body');
+      const dictContainer = document.getElementById('dict-container');
       const countEl = document.getElementById('count');
-      tbody.innerHTML = '';
+      dictBody.innerHTML = '';
       countEl.textContent = `${list.length} BOLI`;
 
       const frag = document.createDocumentFragment();
 
       list.forEach(item => {
-        const totalSenses = item.senses.length;
         const totalGroups = item.posGroups.length;
-        const isSingleSense = totalSenses === 1;
 
-        const wordRows = [];
+        // 単語カードコンテナ（外枠）
+        const card = document.createElement('div');
+        card.className = `word-card ${isAllExpanded ? 'expanded' : ''}`;
+        card.dataset.wordId = item.id;
 
+        // 1. [単語]（Boli）: 枠全体で上下中央揃え
+        const cellWord = document.createElement('div');
+        cellWord.className = 'cell cell-word';
+        cellWord.textContent = item.word;
+        cellWord.title = item.raw;
+        cellWord.style.gridColumn = '1';
+        cellWord.style.gridRow = `1 / span ${totalGroups}`;
+        card.appendChild(cellWord);
+
+        // 2. [発音]（Pronunciation）: 枠全体で上下中央揃え
+        const cellPron = document.createElement('div');
+        cellPron.className = 'cell cell-pron';
+        cellPron.textContent = item.mainPron;
+        cellPron.style.gridColumn = '3';
+        cellPron.style.gridRow = `1 / span ${totalGroups}`;
+        card.appendChild(cellPron);
+
+        // 各品詞行（Class, Meaning, Detail）を配置
         item.posGroups.forEach((group, gIndex) => {
-          const tr = document.createElement('tr');
-          tr.className = `word-row ${isSingleSense ? 'single-sense' : 'multi-sense'}`;
-          tr.dataset.wordId = item.id;
+          const rowNum = gIndex + 1;
+          const isDivider = gIndex > 0;
 
-          if (gIndex > 0) {
-            tr.classList.add('pos-divider'); // 枠内の異なる品詞間に横線
-          }
-          if (gIndex === totalGroups - 1) {
-            tr.classList.add('last-sub-row');
-          }
+          // 品詞セル
+          const cellPos = document.createElement('div');
+          cellPos.className = `cell cell-pos ${isDivider ? 'pos-divider' : ''}`;
+          cellPos.style.gridColumn = '2';
+          cellPos.style.gridRow = `${rowNum}`;
 
-          // [単語]（Boli）: rowspanで結合し、枠内で上下中央揃え
-          if (gIndex === 0) {
-            const tdWord = document.createElement('td');
-            tdWord.className = 'col-word';
-            tdWord.textContent = item.word;
-            tdWord.title = item.raw;
-            if (totalGroups > 1) tdWord.rowSpan = totalGroups;
-            tr.appendChild(tdWord);
-          }
-
-          // [品詞]（Class）
-          const tdPos = document.createElement('td');
-          tdPos.className = 'col-pos';
-          const stickyPos = document.createElement('div');
+          const stickyPos = document.createElement('span');
           stickyPos.className = 'sticky-pos';
           stickyPos.textContent = group.pos;
-          tdPos.appendChild(stickyPos);
-          tr.appendChild(tdPos);
+          cellPos.appendChild(stickyPos);
+          card.appendChild(cellPos);
 
-          // [発音]（Pronunciation）: rowspanで結合し、枠内で上下中央揃え
-          if (gIndex === 0) {
-            const tdPron = document.createElement('td');
-            tdPron.className = 'col-pron';
-            tdPron.textContent = item.mainPron;
-            if (totalGroups > 1) tdPron.rowSpan = totalGroups;
-            tr.appendChild(tdPron);
-          }
-
-          // [意味]（Meaning）
-          const tdMean = document.createElement('td');
-          tdMean.className = 'col-mean';
+          // 意味セル
+          const cellMean = document.createElement('div');
+          cellMean.className = `cell cell-mean ${isDivider ? 'pos-divider' : ''}`;
+          cellMean.style.gridColumn = '4';
+          cellMean.style.gridRow = `${rowNum}`;
           if (group.senses.length === 1) {
-            tdMean.textContent = group.senses[0].mean;
+            cellMean.textContent = group.senses[0].mean;
           } else {
-            tdMean.textContent = group.senses
+            cellMean.textContent = group.senses
               .map((s, idx) => `${idx + 1}. ${s.mean}`)
               .join('\n');
           }
-          tr.appendChild(tdMean);
+          card.appendChild(cellMean);
 
-          // [ニュアンス]（Detail / Nuance）: 各意味の真横に対応して配置
-          const tdDetail = document.createElement('td');
-          tdDetail.className = 'col-detail';
-
-          const detailWrapper = document.createElement('div');
-          detailWrapper.className = 'detail-wrapper';
+          // ニュアンスセル
+          const cellDetail = document.createElement('div');
+          cellDetail.className = `cell cell-detail ${isDivider ? 'pos-divider' : ''}`;
+          cellDetail.style.gridColumn = '5';
+          cellDetail.style.gridRow = `${rowNum}`;
 
           if (group.senses.length === 1) {
             const detailText = group.senses[0].detail.trim();
-            detailWrapper.textContent = detailText || '-';
-            if (!detailText) detailWrapper.className += ' detail-empty';
+            cellDetail.textContent = detailText || '-';
+            if (!detailText) cellDetail.className += ' detail-empty';
           } else {
-            detailWrapper.textContent = group.senses
+            cellDetail.textContent = group.senses
               .map((s, idx) => `${idx + 1}. ${s.detail.trim() || '-'}`)
               .join('\n');
           }
-
-          tdDetail.appendChild(detailWrapper);
-          tr.appendChild(tdDetail);
-
-          wordRows.push(tr);
-          frag.appendChild(tr);
+          card.appendChild(cellDetail);
         });
 
-        // 単語枠の拡大・縮小トグル処理
-        const toggleWord = () => {
-          const isExpanded = wordRows[0].classList.contains('expanded');
-          wordRows.forEach(r => r.classList.toggle('expanded', !isExpanded));
-
-          // 1つでも開いている行があればテーブル全体にhas-expandedを付与
-          const anyExpanded = tbody.querySelectorAll('tr.word-row.expanded').length > 0;
-          table.classList.toggle('has-expanded', anyExpanded);
-        };
-
-        wordRows.forEach(r => {
-          r.addEventListener('click', toggleWord);
-          r.addEventListener('mouseenter', () => wordRows.forEach(row => row.classList.add('hovered')));
-          r.addEventListener('mouseleave', () => wordRows.forEach(row => row.classList.remove('hovered')));
+        // 単語枠のタップによる個別開閉
+        card.addEventListener('click', () => {
+          card.classList.toggle('expanded');
+          updateHeaderWidth();
         });
+
+        frag.appendChild(card);
       });
 
-      tbody.appendChild(frag);
+      dictBody.appendChild(frag);
+      updateHeaderWidth();
     }
 
-    // 全開
-    document.getElementById('btn-open-all').addEventListener('click', () => {
-      document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.add('expanded'));
-      document.getElementById('table').classList.add('has-expanded');
-    });
+    // ヘッダーの列幅状態とボタン表示の同期
+    function updateHeaderWidth() {
+      const dictContainer = document.getElementById('dict-container');
+      const btnToggle = document.getElementById('btn-toggle-all');
+      const cards = document.querySelectorAll('.word-card');
+      const expandedCards = document.querySelectorAll('.word-card.expanded');
 
-    // 全閉
-    document.getElementById('btn-close-all').addEventListener('click', () => {
-      document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.remove('expanded'));
-      document.getElementById('table').classList.remove('has-expanded');
+      const anyExpanded = expandedCards.length > 0;
+      dictContainer.classList.toggle('has-expanded', anyExpanded);
+
+      // すべて開いているかどうかでボタン表示を変更
+      if (cards.length > 0 && expandedCards.length === cards.length) {
+        isAllExpanded = true;
+        btnToggle.textContent = 'Close All';
+      } else {
+        isAllExpanded = false;
+        btnToggle.textContent = 'Open All';
+      }
+    }
+
+    // OPEN ALL / CLOSE ALL 統合トグルボタン
+    document.getElementById('btn-toggle-all').addEventListener('click', () => {
+      isAllExpanded = !isAllExpanded;
+      const cards = document.querySelectorAll('.word-card');
+      cards.forEach(card => card.classList.toggle('expanded', isAllExpanded));
+      updateHeaderWidth();
     });
 
     // 品詞ソート
@@ -700,13 +657,13 @@
     thPos.addEventListener('click', () => {
       if (sortState === 'none') {
         sortState = 'asc';
-        thPos.className = 'col-pos sortable asc';
+        thPos.className = 'th-cell sortable asc';
       } else if (sortState === 'asc') {
         sortState = 'desc';
-        thPos.className = 'col-pos sortable desc';
+        thPos.className = 'th-cell sortable desc';
       } else {
         sortState = 'none';
-        thPos.className = 'col-pos sortable';
+        thPos.className = 'th-cell sortable';
       }
       applyView();
     });
