@@ -17,6 +17,7 @@
       --border: #000000;
       --line: #e5e5e5;
       --sub: #888888;
+      --detail-bg: #fafafa;
     }
 
     * {
@@ -56,6 +57,7 @@
       font-size: 0.75rem;
       letter-spacing: 0.15em;
       color: var(--sub);
+      text-transform: uppercase;
     }
 
     /* 検索ボックスとモード切り替え */
@@ -77,6 +79,7 @@
       outline: none;
       border-radius: 0;
       letter-spacing: 0.05em;
+      cursor: text;
     }
 
     .search-bar input::placeholder {
@@ -194,6 +197,7 @@
       max-width: 70px;
     }
 
+    /* テーブルスタイル */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -237,8 +241,62 @@
       font-size: 0.95rem;
     }
 
-    tbody tr:hover {
+    /* 単語データ行（クリック可能） */
+    tr.word-row {
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    tr.word-row:hover {
       background-color: #f9f9f9;
+    }
+
+    tr.word-row.expanded {
+      background-color: #f2f2f2;
+      border-bottom: none;
+    }
+
+    /* F列 詳細・ニュアンス展開枠 */
+    tr.detail-row {
+      display: none;
+    }
+
+    tr.detail-row.expanded {
+      display: table-row;
+    }
+
+    tr.detail-row td {
+      padding: 24px 20px;
+      background-color: var(--detail-bg);
+      border-bottom: 1px solid var(--border);
+      cursor: pointer;
+    }
+
+    .detail-container {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .detail-heading {
+      font-size: 0.65rem;
+      letter-spacing: 0.15em;
+      text-transform: uppercase;
+      color: var(--sub);
+      font-weight: 600;
+    }
+
+    .detail-body {
+      font-size: 0.9rem;
+      line-height: 1.7;
+      color: var(--text);
+      white-space: pre-wrap; /* 改行を反映 */
+    }
+
+    .detail-empty {
+      font-size: 0.85rem;
+      color: var(--sub);
+      font-style: italic;
     }
 
     .col-word {
@@ -312,10 +370,10 @@
   <div id="keyboard" class="keyboard-panel">
     <!-- Row 1 -->
     <div class="kb-row">
-      <button type="button" class="kb-key" data-char="ts"><span class="kb-sub">ts</span><span class="kb-main">q</span></button>
+      <button type="button" class="kb-key" data-char="q"><span class="kb-sub">ts</span><span class="kb-main">q</span></button>
       <button type="button" class="kb-key" data-char="w"><span class="kb-sub">w</span><span class="kb-main">w</span></button>
       <button type="button" class="kb-key" data-char="e"><span class="kb-sub">e</span><span class="kb-main">e</span></button>
-      <button type="button" class="kb-key" data-char="sh"><span class="kb-sub">sh</span><span class="kb-main">r</span></button>
+      <button type="button" class="kb-key" data-char="r"><span class="kb-sub">sh</span><span class="kb-main">r</span></button>
       <button type="button" class="kb-key" data-char="t"><span class="kb-sub">t</span><span class="kb-main">t</span></button>
       <button type="button" class="kb-key" data-char="y"><span class="kb-sub">y</span><span class="kb-main">y</span></button>
       <button type="button" class="kb-key" data-char="u"><span class="kb-sub">u</span><span class="kb-main">u</span></button>
@@ -341,7 +399,7 @@
       <button type="button" class="kb-key" data-char="z"><span class="kb-sub">z</span><span class="kb-main">z</span></button>
       <button type="button" class="kb-key" data-char="x"><span class="kb-sub">x</span><span class="kb-main">x</span></button>
       <button type="button" class="kb-key" data-char="c"><span class="kb-sub">c</span><span class="kb-main">c</span></button>
-      <button type="button" class="kb-key" data-char="ly"><span class="kb-sub">ly</span><span class="kb-main">v</span></button>
+      <button type="button" class="kb-key" data-char="v"><span class="kb-sub">ly</span><span class="kb-main">v</span></button>
       <button type="button" class="kb-key" data-char="b"><span class="kb-sub">b</span><span class="kb-main">b</span></button>
       <button type="button" class="kb-key" data-char="n"><span class="kb-sub">n</span><span class="kb-main">n</span></button>
       <button type="button" class="kb-key" data-char="m"><span class="kb-sub">m</span><span class="kb-main">m</span></button>
@@ -360,7 +418,7 @@
   <table id="table" style="display: none;">
     <thead>
       <tr>
-        <th class="col-word">Word</th>
+        <th class="col-word">Boli</th>
         <th class="col-pos sortable" id="th-pos">Class</th>
         <th class="col-pron">Pronunciation</th>
         <th class="col-mean">Meaning</th>
@@ -372,27 +430,24 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
+    // A列用 置換処理（^ -> ̄、´ -> 消去 のみ残す）
     function convertKazadok(str) {
       if (!str) return '';
       return str
-        .replace(/ly/gi, (m) => m === 'LY' || m === 'Ly' ? 'V' : 'v')
-        .replace(/ts/gi, (m) => m === 'TS' || m === 'Ts' ? 'Q' : 'q')
-        .replace(/sh/gi, (m) => m === 'SH' || m === 'Sh' ? 'R' : 'r')
         .replace(/\^/g, '\u0304')
         .replace(/´/g, '');
     }
 
+    // 検索語句正規化（- / ^ / ̄ のゆらぎ吸収）
     function normalizeQuery(str) {
       if (!str) return '';
       return str.toLowerCase()
-        .replace(/ly/g, 'v')
-        .replace(/ts/g, 'q')
-        .replace(/sh/g, 'r')
         .replace(/-/g, '^')
         .replace(/\u0304/g, '^')
         .replace(/´/g, '');
     }
 
+    // CSV解析パーサー
     function parseCSV(text) {
       const rows = [];
       let row = [];
@@ -428,6 +483,7 @@
       return rows;
     }
 
+    // CORS回避付きフェッチ
     async function fetchCSVWithFallback(url) {
       const target = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
       
@@ -460,20 +516,21 @@
         const csvText = await fetchCSVWithFallback(CSV_URL);
         const rows = parseCSV(csvText);
 
-        const dataRows = (rows.length > 0 && (rows[0][0] === '単語' || rows[0][1] === '品詞'))
+        const dataRows = (rows.length > 0 && (rows[0][0] === '単語' || rows[0][1] === '品詞' || rows[0][0] === 'Boli'))
           ? rows.slice(1)
           : rows;
 
         records = dataRows.map((r, index) => {
           const raw = r[0] || '';
           return {
-            index: index,
+            id: index,
             raw: raw,
             word: convertKazadok(raw),
             normalizedRaw: normalizeQuery(raw),
             pos: r[1] || '',
             pron: r[2] || '',
-            mean: r[3] || ''
+            mean: r[3] || '',
+            detail: r[5] || '' // F列: 詳細・ニュアンス (インデックス5)
           };
         }).filter(item => item.raw !== '');
 
@@ -497,15 +554,16 @@
         item.word.toLowerCase().includes(qLower) ||
         item.pos.toLowerCase().includes(qLower) ||
         item.pron.toLowerCase().includes(qLower) ||
-        item.mean.toLowerCase().includes(qLower)
+        item.mean.toLowerCase().includes(qLower) ||
+        item.detail.toLowerCase().includes(qLower)
       );
 
       if (sortState === 'asc') {
-        list.sort((a, b) => a.pos.localeCompare(b.pos, 'ja') || a.index - b.index);
+        list.sort((a, b) => a.pos.localeCompare(b.pos, 'ja') || a.id - b.id);
       } else if (sortState === 'desc') {
-        list.sort((a, b) => b.pos.localeCompare(a.pos, 'ja') || a.index - b.index);
+        list.sort((a, b) => b.pos.localeCompare(a.pos, 'ja') || a.id - b.id);
       } else {
-        list.sort((a, b) => a.index - b.index);
+        list.sort((a, b) => a.id - b.id);
       }
 
       render(list);
@@ -515,11 +573,14 @@
       const tbody = document.getElementById('tbody');
       const countEl = document.getElementById('count');
       tbody.innerHTML = '';
-      countEl.textContent = `${list.length}`;
+      countEl.textContent = `${list.length} BOLI`;
 
       const frag = document.createDocumentFragment();
       list.forEach(item => {
-        const tr = document.createElement('tr');
+        // メイン行
+        const trWord = document.createElement('tr');
+        trWord.className = 'word-row';
+        trWord.dataset.id = item.id;
 
         const tdWord = document.createElement('td');
         tdWord.className = 'col-word';
@@ -538,11 +599,57 @@
         tdMean.className = 'col-mean';
         tdMean.textContent = item.mean;
 
-        tr.appendChild(tdWord);
-        tr.appendChild(tdPos);
-        tr.appendChild(tdPron);
-        tr.appendChild(tdMean);
-        frag.appendChild(tr);
+        trWord.appendChild(tdWord);
+        trWord.appendChild(tdPos);
+        trWord.appendChild(tdPron);
+        trWord.appendChild(tdMean);
+
+        // 詳細・ニュアンス行（F列）
+        const trDetail = document.createElement('tr');
+        trDetail.className = 'detail-row';
+        trDetail.id = `detail-${item.id}`;
+
+        const tdDetail = document.createElement('td');
+        tdDetail.colSpan = 4;
+
+        const detailContainer = document.createElement('div');
+        detailContainer.className = 'detail-container';
+
+        const detailHead = document.createElement('div');
+        detailHead.className = 'detail-heading';
+        detailHead.textContent = 'Detail / Nuance';
+
+        const detailBody = document.createElement('div');
+        if (item.detail.trim()) {
+          detailBody.className = 'detail-body';
+          detailBody.textContent = item.detail;
+        } else {
+          detailBody.className = 'detail-empty';
+          detailBody.textContent = '-';
+        }
+
+        detailContainer.appendChild(detailHead);
+        detailContainer.appendChild(detailBody);
+        tdDetail.appendChild(detailContainer);
+        trDetail.appendChild(tdDetail);
+
+        // タップ/クリックで開閉（トグル）
+        const toggleRow = () => {
+          const isOpen = trDetail.classList.contains('expanded');
+          if (isOpen) {
+            trDetail.classList.remove('expanded');
+            trWord.classList.remove('expanded');
+          } else {
+            trDetail.classList.add('expanded');
+            trWord.classList.add('expanded');
+          }
+        };
+
+        trWord.addEventListener('click', toggleRow);
+        trDetail.addEventListener('click', toggleRow);
+
+        frag.appendChild(trWord);
+        frag.appendChild(trDetail);
       });
       tbody.appendChild(frag);
     }
@@ -566,7 +673,6 @@
     const keyboardEl = document.getElementById('keyboard');
     const modeBtn = document.getElementById('mode-btn');
 
-    // キーボードモード状態 ('kazadok' または 'standard')
     let currentMode = 'kazadok';
 
     function setKeyboardMode(mode) {
@@ -596,12 +702,10 @@
       }
     });
 
-    // 独自キーボード操作時のフォーカス外れ防止
     keyboardEl.addEventListener('pointerdown', (e) => {
       e.preventDefault();
     });
 
-    // 外側クリックでキーボードを非表示（KAZADOKモード時）
     document.addEventListener('pointerdown', (e) => {
       const isInside = filterInput.contains(e.target) || 
                        keyboardEl.contains(e.target) || 
