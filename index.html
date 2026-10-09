@@ -60,7 +60,7 @@
       text-transform: uppercase;
     }
 
-    /* 画面上部に固定されるコントロールバー */
+    /* 画面上部固定コントロールバー */
     .sticky-bar {
       position: sticky;
       top: 0;
@@ -122,7 +122,7 @@
       color: var(--bg);
     }
 
-    /* テーブルスタイル */
+    /* テーブル */
     table {
       width: 100%;
       border-collapse: collapse;
@@ -161,11 +161,10 @@
 
     td {
       padding: 16px 14px;
-      vertical-align: baseline;
+      vertical-align: top;
       font-size: 0.95rem;
     }
 
-    /* 単語データ行 */
     tr.word-row {
       cursor: pointer;
       border-bottom: 1px solid var(--line);
@@ -181,7 +180,7 @@
       border-bottom-color: transparent;
     }
 
-    /* F列 詳細アコーディオン展開枠 */
+    /* 詳細展開行 */
     tr.detail-row td {
       padding: 0;
       border-bottom: 1px solid var(--line);
@@ -193,7 +192,7 @@
       border-bottom: 1px solid var(--border);
     }
 
-    /* 滑らかなアコーディオンアニメーション構造 */
+    /* アコーディオンアニメーション用ラッパー */
     .detail-wrapper {
       display: grid;
       grid-template-rows: 0fr;
@@ -212,15 +211,26 @@
       padding: 20px 14px 24px 14px;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 16px;
     }
 
-    .detail-heading {
-      font-size: 0.65rem;
-      letter-spacing: 0.15em;
+    .detail-item {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .detail-item:not(:last-child) {
+      padding-bottom: 12px;
+      border-bottom: 1px solid #ececec;
+    }
+
+    .detail-sub-heading {
+      font-size: 0.7rem;
+      letter-spacing: 0.1em;
       text-transform: uppercase;
-      color: var(--sub);
       font-weight: 600;
+      color: var(--sub);
     }
 
     .detail-body {
@@ -248,6 +258,8 @@
       width: 14%;
       font-size: 0.85rem;
       letter-spacing: 0.05em;
+      white-space: pre-wrap;
+      line-height: 1.6;
     }
 
     .col-pron {
@@ -255,10 +267,14 @@
       font-family: "Lucida Console", Monaco, monospace;
       font-size: 0.85rem;
       letter-spacing: 0.02em;
+      white-space: pre-wrap;
+      line-height: 1.6;
     }
 
     .col-mean {
       width: 34%;
+      white-space: pre-wrap;
+      line-height: 1.6;
     }
 
     .state {
@@ -298,7 +314,6 @@
     <span id="count" class="count"></span>
   </header>
 
-  <!-- 上部固定パネル: 検索バー + 一括開閉ボタン -->
   <div class="sticky-bar">
     <div class="search-box">
       <input type="text" id="filter" placeholder="Search" autocomplete="off">
@@ -326,7 +341,7 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
-    // A列 表示用置換処理（^ -> ̄、´ -> 消去 のみ）
+    // A列用 置換処理（^ -> ̄、´ -> 消去 のみ）
     function convertKazadok(str) {
       if (!str) return '';
       return str
@@ -334,7 +349,7 @@
         .replace(/´/g, '');
     }
 
-    // 検索照合用: A列のq, r, vを本来の発音(ts, sh, ly)に復元
+    // 検索用: A列のq, r, vを本来の発音(ts, sh, ly)に復元
     function restorePhonemes(str) {
       if (!str) return '';
       return str
@@ -347,7 +362,7 @@
         .replace(/´/g, '');
     }
 
-    // 検索語句正規化（長音記号のゆらぎ - / ^ / ̄ を統一）
+    // 検索語句正規化（長音記号のゆらぎ吸収）
     function normalizeQuery(str) {
       if (!str) return '';
       return str.toLowerCase()
@@ -392,7 +407,7 @@
       return rows;
     }
 
-    // CORS回避付きフェッチ
+    // CORSフォールバック取得
     async function fetchCSVWithFallback(url) {
       const target = url + (url.includes('?') ? '&' : '?') + '_ts=' + Date.now();
       
@@ -429,20 +444,34 @@
           ? rows.slice(1)
           : rows;
 
-        records = dataRows.map((r, index) => {
-          const raw = r[0] || '';
-          const restored = restorePhonemes(raw); // q->ts, r->sh, v->ly に復元した文字列
-          return {
-            id: index,
-            raw: raw,
-            word: convertKazadok(raw),
-            restoredWord: normalizeQuery(restored), // 検索照合用（A列の生データは除外）
-            pos: r[1] || '',
-            pron: r[2] || '',
-            mean: r[3] || '',
-            detail: r[5] || '' // F列: 詳細・ニュアンス
+        // 単語（A列）ごとにグループ化
+        const groupedMap = new Map();
+
+        dataRows.forEach(r => {
+          const raw = (r[0] || '').trim();
+          if (!raw) return;
+
+          const sense = {
+            pos: (r[1] || '').trim(),
+            pron: (r[2] || '').trim(),
+            mean: (r[3] || '').trim(),
+            detail: (r[5] || '').trim()
           };
-        }).filter(item => item.raw !== '');
+
+          if (!groupedMap.has(raw)) {
+            groupedMap.set(raw, {
+              id: groupedMap.size,
+              raw: raw,
+              word: convertKazadok(raw),
+              restoredWord: normalizeQuery(restorePhonemes(raw)),
+              senses: [sense]
+            });
+          } else {
+            groupedMap.get(raw).senses.push(sense);
+          }
+        });
+
+        records = Array.from(groupedMap.values());
 
         applyView();
         stateEl.style.display = 'none';
@@ -458,21 +487,30 @@
       const qNorm = normalizeQuery(rawInput);
       const qLower = rawInput.toLowerCase();
 
-      // 検索ロジック:
-      // item.raw（q, r, vが含まれるデータ）はあえて検索対象に含めず、
-      // 復元後の item.restoredWord (ts, sh, ly) のみと照合
-      let list = !rawInput ? [...records] : records.filter(item =>
-        item.restoredWord.includes(qNorm) ||
-        item.pos.toLowerCase().includes(qLower) ||
-        item.pron.toLowerCase().includes(qLower) ||
-        item.mean.toLowerCase().includes(qLower) ||
-        item.detail.toLowerCase().includes(qLower)
-      );
+      // 検索照合（生データq, r, vは除外し、復元した単語または各語義のテキストに一致するか判定）
+      let list = !rawInput ? [...records] : records.filter(item => {
+        if (item.restoredWord.includes(qNorm)) return true;
+        return item.senses.some(s =>
+          s.pos.toLowerCase().includes(qLower) ||
+          s.pron.toLowerCase().includes(qLower) ||
+          s.mean.toLowerCase().includes(qLower) ||
+          s.detail.toLowerCase().includes(qLower)
+        );
+      });
 
+      // 代表品詞によるソート
       if (sortState === 'asc') {
-        list.sort((a, b) => a.pos.localeCompare(b.pos, 'ja') || a.id - b.id);
+        list.sort((a, b) => {
+          const posA = a.senses[0]?.pos || '';
+          const posB = b.senses[0]?.pos || '';
+          return posA.localeCompare(posB, 'ja') || a.id - b.id;
+        });
       } else if (sortState === 'desc') {
-        list.sort((a, b) => b.pos.localeCompare(a.pos, 'ja') || a.id - b.id);
+        list.sort((a, b) => {
+          const posA = a.senses[0]?.pos || '';
+          const posB = b.senses[0]?.pos || '';
+          return posB.localeCompare(posA, 'ja') || a.id - b.id;
+        });
       } else {
         list.sort((a, b) => a.id - b.id);
       }
@@ -488,6 +526,23 @@
 
       const frag = document.createDocumentFragment();
       list.forEach(item => {
+        // 表示用テキストの整形
+        const posText = item.senses.map(s => s.pos).filter(Boolean).join('\n');
+        
+        // 発音（重複排除して表示）
+        const prons = [...new Set(item.senses.map(s => s.pron).filter(Boolean))];
+        const pronText = prons.join('\n');
+
+        // 意味（複数ある場合は連番付与）
+        let meanText = '';
+        if (item.senses.length === 1) {
+          meanText = item.senses[0].mean;
+        } else {
+          meanText = item.senses
+            .map((s, idx) => `${idx + 1}. ${s.mean}`)
+            .join('\n');
+        }
+
         // メイン行
         const trWord = document.createElement('tr');
         trWord.className = 'word-row';
@@ -500,22 +555,22 @@
 
         const tdPos = document.createElement('td');
         tdPos.className = 'col-pos';
-        tdPos.textContent = item.pos;
+        tdPos.textContent = posText;
 
         const tdPron = document.createElement('td');
         tdPron.className = 'col-pron';
-        tdPron.textContent = item.pron;
+        tdPron.textContent = pronText;
 
         const tdMean = document.createElement('td');
         tdMean.className = 'col-mean';
-        tdMean.textContent = item.mean;
+        tdMean.textContent = meanText;
 
         trWord.appendChild(tdWord);
         trWord.appendChild(tdPos);
         trWord.appendChild(tdPron);
         trWord.appendChild(tdMean);
 
-        // 詳細・ニュアンス行（F列）
+        // 詳細・ニュアンス展開行
         const trDetail = document.createElement('tr');
         trDetail.className = 'detail-row';
         trDetail.id = `detail-${item.id}`;
@@ -523,7 +578,6 @@
         const tdDetail = document.createElement('td');
         tdDetail.colSpan = 4;
 
-        // アコーディオン用ラッパー（Gridアニメーション）
         const wrapper = document.createElement('div');
         wrapper.className = 'detail-wrapper';
 
@@ -533,27 +587,43 @@
         const content = document.createElement('div');
         content.className = 'detail-content';
 
-        const detailHead = document.createElement('div');
-        detailHead.className = 'detail-heading';
-        detailHead.textContent = 'Detail / Nuance';
+        // 各語義ごとの詳細・ニュアンスを展開
+        item.senses.forEach((s, idx) => {
+          const detailItem = document.createElement('div');
+          detailItem.className = 'detail-item';
 
-        const detailBody = document.createElement('div');
-        if (item.detail.trim()) {
-          detailBody.className = 'detail-body';
-          detailBody.textContent = item.detail;
-        } else {
-          detailBody.className = 'detail-empty';
-          detailBody.textContent = '-';
-        }
+          // 複数ある場合は見出しに品詞や意味を添える
+          if (item.senses.length > 1) {
+            const head = document.createElement('div');
+            head.className = 'detail-sub-heading';
+            head.textContent = `${idx + 1}. ${s.pos ? `[${s.pos}] ` : ''}${s.mean}`;
+            detailItem.appendChild(head);
+          } else {
+            const head = document.createElement('div');
+            head.className = 'detail-sub-heading';
+            head.textContent = 'Detail / Nuance';
+            detailItem.appendChild(head);
+          }
 
-        content.appendChild(detailHead);
-        content.appendChild(detailBody);
+          const body = document.createElement('div');
+          if (s.detail.trim()) {
+            body.className = 'detail-body';
+            body.textContent = s.detail;
+          } else {
+            body.className = 'detail-empty';
+            body.textContent = '-';
+          }
+          detailItem.appendChild(body);
+
+          content.appendChild(detailItem);
+        });
+
         inner.appendChild(content);
         wrapper.appendChild(inner);
         tdDetail.appendChild(wrapper);
         trDetail.appendChild(tdDetail);
 
-        // トグル関数
+        // タップ開閉イベント
         const toggleRow = () => {
           const isOpen = trDetail.classList.contains('expanded');
           if (isOpen) {
@@ -602,7 +672,7 @@
       applyView();
     });
 
-    // 検索入力時のリアルタイム反映
+    // 検索入力時の反映
     document.getElementById('filter').addEventListener('input', applyView);
 
     init();
