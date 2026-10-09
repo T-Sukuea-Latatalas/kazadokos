@@ -32,13 +32,13 @@
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
-      padding: 60px 40px;
+      padding: 40px;
       max-width: 1100px;
       margin: 0 auto;
     }
 
     header {
-      margin-bottom: 50px;
+      margin-bottom: 30px;
       border-bottom: 2px solid var(--border);
       padding-bottom: 16px;
       display: flex;
@@ -60,141 +60,66 @@
       text-transform: uppercase;
     }
 
-    /* 検索ボックスとモード切り替え */
-    .search-bar {
+    /* 画面上部に固定されるコントロールバー */
+    .sticky-bar {
+      position: sticky;
+      top: 0;
+      background-color: var(--bg);
+      z-index: 100;
+      padding-top: 10px;
+      padding-bottom: 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 30px;
       display: flex;
       align-items: center;
-      border-bottom: 1px solid var(--border);
-      margin-bottom: 24px;
-      gap: 16px;
+      gap: 20px;
     }
 
-    .search-bar input {
+    .search-box {
       flex: 1;
+    }
+
+    .search-box input {
+      width: 100%;
       background: transparent;
       border: none;
-      padding: 12px 0;
+      padding: 8px 0;
       font-size: 0.95rem;
       color: var(--text);
       outline: none;
-      border-radius: 0;
       letter-spacing: 0.05em;
-      cursor: text;
     }
 
-    .search-bar input::placeholder {
+    .search-box input::placeholder {
       color: var(--sub);
       font-size: 0.8rem;
       letter-spacing: 0.15em;
       text-transform: uppercase;
     }
 
-    .mode-toggle {
+    .actions {
+      display: flex;
+      gap: 8px;
+    }
+
+    .btn {
       background: var(--bg);
       border: 1px solid var(--border);
       color: var(--text);
-      font-size: 0.7rem;
+      font-size: 0.65rem;
       letter-spacing: 0.12em;
-      padding: 6px 14px;
+      padding: 8px 14px;
       cursor: pointer;
       font-weight: 600;
       outline: none;
       transition: background-color 0.1s, color 0.1s;
       white-space: nowrap;
+      text-transform: uppercase;
     }
 
-    .mode-toggle:hover {
+    .btn:hover {
       background: var(--text);
       color: var(--bg);
-    }
-
-    /* ソフトウェアキーボード */
-    .keyboard-panel {
-      display: none;
-      border: 1px solid var(--border);
-      padding: 20px;
-      margin-bottom: 40px;
-      background: var(--bg);
-      user-select: none;
-      -webkit-user-select: none;
-    }
-
-    .keyboard-panel.active {
-      display: block;
-    }
-
-    .kb-row {
-      display: flex;
-      justify-content: center;
-      gap: 6px;
-      margin-bottom: 6px;
-    }
-
-    .kb-row:last-child {
-      margin-bottom: 0;
-    }
-
-    .kb-key {
-      flex: 1;
-      max-width: 58px;
-      height: 52px;
-      border: 1px solid var(--border);
-      background: var(--bg);
-      color: var(--text);
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      outline: none;
-      transition: background-color 0.1s, color 0.1s;
-    }
-
-    .kb-key:hover {
-      background: var(--text);
-      color: var(--bg);
-    }
-
-    .kb-key:hover .kb-sub {
-      color: var(--bg);
-    }
-
-    .kb-sub {
-      font-size: 0.65rem;
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-      line-height: 1;
-      margin-bottom: 3px;
-      color: var(--sub);
-      letter-spacing: 0.05em;
-    }
-
-    .kb-main {
-      font-family: 'NotoSansKazadok', sans-serif;
-      font-size: 1.25rem;
-      line-height: 1;
-    }
-
-    .kb-key.action-key {
-      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
-      font-size: 0.7rem;
-      letter-spacing: 0.1em;
-      font-weight: 600;
-    }
-
-    .kb-key.key-del {
-      max-width: 70px;
-    }
-
-    .kb-key.key-space {
-      max-width: 220px;
-    }
-
-    .kb-key.key-switch {
-      max-width: 100px;
-    }
-
-    .kb-key.key-clear {
-      max-width: 70px;
     }
 
     /* テーブルスタイル */
@@ -236,14 +161,14 @@
 
     td {
       padding: 16px 14px;
-      border-bottom: 1px solid var(--line);
       vertical-align: baseline;
       font-size: 0.95rem;
     }
 
-    /* 単語データ行（クリック可能） */
+    /* 単語データ行 */
     tr.word-row {
       cursor: pointer;
+      border-bottom: 1px solid var(--line);
       transition: background-color 0.15s ease;
     }
 
@@ -253,26 +178,38 @@
 
     tr.word-row.expanded {
       background-color: #f2f2f2;
-      border-bottom: none;
+      border-bottom-color: transparent;
     }
 
-    /* F列 詳細・ニュアンス展開枠 */
-    tr.detail-row {
-      display: none;
-    }
-
-    tr.detail-row.expanded {
-      display: table-row;
-    }
-
+    /* F列 詳細アコーディオン展開枠 */
     tr.detail-row td {
-      padding: 24px 20px;
+      padding: 0;
+      border-bottom: 1px solid var(--line);
       background-color: var(--detail-bg);
-      border-bottom: 1px solid var(--border);
       cursor: pointer;
     }
 
-    .detail-container {
+    tr.detail-row.expanded td {
+      border-bottom: 1px solid var(--border);
+    }
+
+    /* 滑らかなアコーディオンアニメーション構造 */
+    .detail-wrapper {
+      display: grid;
+      grid-template-rows: 0fr;
+      transition: grid-template-rows 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+
+    tr.detail-row.expanded .detail-wrapper {
+      grid-template-rows: 1fr;
+    }
+
+    .detail-inner {
+      overflow: hidden;
+    }
+
+    .detail-content {
+      padding: 20px 14px 24px 14px;
       display: flex;
       flex-direction: column;
       gap: 6px;
@@ -290,7 +227,7 @@
       font-size: 0.9rem;
       line-height: 1.7;
       color: var(--text);
-      white-space: pre-wrap; /* 改行を反映 */
+      white-space: pre-wrap;
     }
 
     .detail-empty {
@@ -334,22 +271,22 @@
 
     @media (max-width: 768px) {
       body {
-        padding: 40px 16px;
+        padding: 30px 16px;
+      }
+      .sticky-bar {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 12px;
+        padding-bottom: 14px;
+      }
+      .actions {
+        justify-content: flex-end;
       }
       th, td {
         padding: 12px 8px;
       }
       .col-word {
         font-size: 1.2rem;
-      }
-      .kb-key {
-        height: 44px;
-      }
-      .kb-main {
-        font-size: 1rem;
-      }
-      .kb-sub {
-        font-size: 0.55rem;
       }
     }
   </style>
@@ -361,55 +298,14 @@
     <span id="count" class="count"></span>
   </header>
 
-  <div class="search-bar">
-    <input type="text" id="filter" placeholder="Search" autocomplete="off" inputmode="none">
-    <button type="button" id="mode-btn" class="mode-toggle">KAZADOK</button>
-  </div>
-
-  <!-- QWERTY ソフトウェアキーボード -->
-  <div id="keyboard" class="keyboard-panel">
-    <!-- Row 1 -->
-    <div class="kb-row">
-      <button type="button" class="kb-key" data-char="q"><span class="kb-sub">ts</span><span class="kb-main">q</span></button>
-      <button type="button" class="kb-key" data-char="w"><span class="kb-sub">w</span><span class="kb-main">w</span></button>
-      <button type="button" class="kb-key" data-char="e"><span class="kb-sub">e</span><span class="kb-main">e</span></button>
-      <button type="button" class="kb-key" data-char="r"><span class="kb-sub">sh</span><span class="kb-main">r</span></button>
-      <button type="button" class="kb-key" data-char="t"><span class="kb-sub">t</span><span class="kb-main">t</span></button>
-      <button type="button" class="kb-key" data-char="y"><span class="kb-sub">y</span><span class="kb-main">y</span></button>
-      <button type="button" class="kb-key" data-char="u"><span class="kb-sub">u</span><span class="kb-main">u</span></button>
-      <button type="button" class="kb-key" data-char="i"><span class="kb-sub">i</span><span class="kb-main">i</span></button>
-      <button type="button" class="kb-key" data-char="o"><span class="kb-sub">o</span><span class="kb-main">o</span></button>
-      <button type="button" class="kb-key" data-char="p"><span class="kb-sub">p</span><span class="kb-main">p</span></button>
-      <button type="button" class="kb-key" data-char="-"><span class="kb-sub">-</span><span class="kb-main">&#772;</span></button>
+  <!-- 上部固定パネル: 検索バー + 一括開閉ボタン -->
+  <div class="sticky-bar">
+    <div class="search-box">
+      <input type="text" id="filter" placeholder="Search" autocomplete="off">
     </div>
-    <!-- Row 2 -->
-    <div class="kb-row">
-      <button type="button" class="kb-key" data-char="a"><span class="kb-sub">a</span><span class="kb-main">a</span></button>
-      <button type="button" class="kb-key" data-char="s"><span class="kb-sub">s</span><span class="kb-main">s</span></button>
-      <button type="button" class="kb-key" data-char="d"><span class="kb-sub">d</span><span class="kb-main">d</span></button>
-      <button type="button" class="kb-key" data-char="f"><span class="kb-sub">f</span><span class="kb-main">f</span></button>
-      <button type="button" class="kb-key" data-char="g"><span class="kb-sub">g</span><span class="kb-main">g</span></button>
-      <button type="button" class="kb-key" data-char="h"><span class="kb-sub">h</span><span class="kb-main">h</span></button>
-      <button type="button" class="kb-key" data-char="j"><span class="kb-sub">j</span><span class="kb-main">j</span></button>
-      <button type="button" class="kb-key" data-char="k"><span class="kb-sub">k</span><span class="kb-main">k</span></button>
-      <button type="button" class="kb-key" data-char="l"><span class="kb-sub">l</span><span class="kb-main">l</span></button>
-    </div>
-    <!-- Row 3 -->
-    <div class="kb-row">
-      <button type="button" class="kb-key" data-char="z"><span class="kb-sub">z</span><span class="kb-main">z</span></button>
-      <button type="button" class="kb-key" data-char="x"><span class="kb-sub">x</span><span class="kb-main">x</span></button>
-      <button type="button" class="kb-key" data-char="c"><span class="kb-sub">c</span><span class="kb-main">c</span></button>
-      <button type="button" class="kb-key" data-char="v"><span class="kb-sub">ly</span><span class="kb-main">v</span></button>
-      <button type="button" class="kb-key" data-char="b"><span class="kb-sub">b</span><span class="kb-main">b</span></button>
-      <button type="button" class="kb-key" data-char="n"><span class="kb-sub">n</span><span class="kb-main">n</span></button>
-      <button type="button" class="kb-key" data-char="m"><span class="kb-sub">m</span><span class="kb-main">m</span></button>
-      <button type="button" class="kb-key action-key key-del" data-action="backspace">DEL</button>
-    </div>
-    <!-- Row 4 -->
-    <div class="kb-row">
-      <button type="button" class="kb-key action-key key-space" data-action="space">SPACE</button>
-      <button type="button" class="kb-key action-key key-switch" data-action="switch-os">STANDARD</button>
-      <button type="button" class="kb-key action-key key-clear" data-action="clear">CLEAR</button>
+    <div class="actions">
+      <button type="button" id="btn-open-all" class="btn">Open All</button>
+      <button type="button" id="btn-close-all" class="btn">Close All</button>
     </div>
   </div>
 
@@ -430,7 +326,7 @@
   <script>
     const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRThahRna9pyj-I9FmmH9sF8jye4uDOuGSK63Ti3KYI9NDcFds8hiASgM8ach7ybrlWjlr8H217wZwC/pub?gid=808368291&single=true&output=csv';
 
-    // A列用 置換処理（^ -> ̄、´ -> 消去 のみ残す）
+    // A列 表示用置換処理（^ -> ̄、´ -> 消去 のみ）
     function convertKazadok(str) {
       if (!str) return '';
       return str
@@ -438,7 +334,20 @@
         .replace(/´/g, '');
     }
 
-    // 検索語句正規化（- / ^ / ̄ のゆらぎ吸収）
+    // 検索照合用: A列のq, r, vを本来の発音(ts, sh, ly)に復元
+    function restorePhonemes(str) {
+      if (!str) return '';
+      return str
+        .replace(/q/g, 'ts')
+        .replace(/Q/g, 'TS')
+        .replace(/r/g, 'sh')
+        .replace(/R/g, 'SH')
+        .replace(/v/g, 'ly')
+        .replace(/V/g, 'LY')
+        .replace(/´/g, '');
+    }
+
+    // 検索語句正規化（長音記号のゆらぎ - / ^ / ̄ を統一）
     function normalizeQuery(str) {
       if (!str) return '';
       return str.toLowerCase()
@@ -447,7 +356,7 @@
         .replace(/´/g, '');
     }
 
-    // CSV解析パーサー
+    // CSVパーサー
     function parseCSV(text) {
       const rows = [];
       let row = [];
@@ -522,15 +431,16 @@
 
         records = dataRows.map((r, index) => {
           const raw = r[0] || '';
+          const restored = restorePhonemes(raw); // q->ts, r->sh, v->ly に復元した文字列
           return {
             id: index,
             raw: raw,
             word: convertKazadok(raw),
-            normalizedRaw: normalizeQuery(raw),
+            restoredWord: normalizeQuery(restored), // 検索照合用（A列の生データは除外）
             pos: r[1] || '',
             pron: r[2] || '',
             mean: r[3] || '',
-            detail: r[5] || '' // F列: 詳細・ニュアンス (インデックス5)
+            detail: r[5] || '' // F列: 詳細・ニュアンス
           };
         }).filter(item => item.raw !== '');
 
@@ -548,10 +458,11 @@
       const qNorm = normalizeQuery(rawInput);
       const qLower = rawInput.toLowerCase();
 
+      // 検索ロジック:
+      // item.raw（q, r, vが含まれるデータ）はあえて検索対象に含めず、
+      // 復元後の item.restoredWord (ts, sh, ly) のみと照合
       let list = !rawInput ? [...records] : records.filter(item =>
-        item.normalizedRaw.includes(qNorm) ||
-        item.raw.toLowerCase().includes(qLower) ||
-        item.word.toLowerCase().includes(qLower) ||
+        item.restoredWord.includes(qNorm) ||
         item.pos.toLowerCase().includes(qLower) ||
         item.pron.toLowerCase().includes(qLower) ||
         item.mean.toLowerCase().includes(qLower) ||
@@ -580,7 +491,7 @@
         // メイン行
         const trWord = document.createElement('tr');
         trWord.className = 'word-row';
-        trWord.dataset.id = item.id;
+        trWord.id = `word-${item.id}`;
 
         const tdWord = document.createElement('td');
         tdWord.className = 'col-word';
@@ -612,8 +523,15 @@
         const tdDetail = document.createElement('td');
         tdDetail.colSpan = 4;
 
-        const detailContainer = document.createElement('div');
-        detailContainer.className = 'detail-container';
+        // アコーディオン用ラッパー（Gridアニメーション）
+        const wrapper = document.createElement('div');
+        wrapper.className = 'detail-wrapper';
+
+        const inner = document.createElement('div');
+        inner.className = 'detail-inner';
+
+        const content = document.createElement('div');
+        content.className = 'detail-content';
 
         const detailHead = document.createElement('div');
         detailHead.className = 'detail-heading';
@@ -628,12 +546,14 @@
           detailBody.textContent = '-';
         }
 
-        detailContainer.appendChild(detailHead);
-        detailContainer.appendChild(detailBody);
-        tdDetail.appendChild(detailContainer);
+        content.appendChild(detailHead);
+        content.appendChild(detailBody);
+        inner.appendChild(content);
+        wrapper.appendChild(inner);
+        tdDetail.appendChild(wrapper);
         trDetail.appendChild(tdDetail);
 
-        // タップ/クリックで開閉（トグル）
+        // トグル関数
         const toggleRow = () => {
           const isOpen = trDetail.classList.contains('expanded');
           if (isOpen) {
@@ -654,6 +574,19 @@
       tbody.appendChild(frag);
     }
 
+    // 全て開く
+    document.getElementById('btn-open-all').addEventListener('click', () => {
+      document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.add('expanded'));
+      document.querySelectorAll('tr.detail-row').forEach(tr => tr.classList.add('expanded'));
+    });
+
+    // すべて閉じる
+    document.getElementById('btn-close-all').addEventListener('click', () => {
+      document.querySelectorAll('tr.word-row').forEach(tr => tr.classList.remove('expanded'));
+      document.querySelectorAll('tr.detail-row').forEach(tr => tr.classList.remove('expanded'));
+    });
+
+    // 品詞ソート
     const thPos = document.getElementById('th-pos');
     thPos.addEventListener('click', () => {
       if (sortState === 'none') {
@@ -669,88 +602,8 @@
       applyView();
     });
 
-    const filterInput = document.getElementById('filter');
-    const keyboardEl = document.getElementById('keyboard');
-    const modeBtn = document.getElementById('mode-btn');
-
-    let currentMode = 'kazadok';
-
-    function setKeyboardMode(mode) {
-      currentMode = mode;
-      if (mode === 'kazadok') {
-        modeBtn.textContent = 'KAZADOK';
-        filterInput.setAttribute('inputmode', 'none');
-        keyboardEl.classList.add('active');
-      } else {
-        modeBtn.textContent = 'STANDARD';
-        filterInput.removeAttribute('inputmode');
-        filterInput.setAttribute('inputmode', 'text');
-        keyboardEl.classList.remove('active');
-      }
-      filterInput.focus();
-    }
-
-    modeBtn.addEventListener('click', () => {
-      setKeyboardMode(currentMode === 'kazadok' ? 'standard' : 'kazadok');
-    });
-
-    filterInput.addEventListener('input', applyView);
-
-    filterInput.addEventListener('focus', () => {
-      if (currentMode === 'kazadok') {
-        keyboardEl.classList.add('active');
-      }
-    });
-
-    keyboardEl.addEventListener('pointerdown', (e) => {
-      e.preventDefault();
-    });
-
-    document.addEventListener('pointerdown', (e) => {
-      const isInside = filterInput.contains(e.target) || 
-                       keyboardEl.contains(e.target) || 
-                       modeBtn.contains(e.target);
-      if (!isInside && currentMode === 'kazadok') {
-        keyboardEl.classList.remove('active');
-      }
-    });
-
-    // キーボード入力処理
-    keyboardEl.addEventListener('click', (e) => {
-      const btn = e.target.closest('.kb-key');
-      if (!btn) return;
-
-      const char = btn.getAttribute('data-char');
-      const action = btn.getAttribute('data-action');
-      const start = filterInput.selectionStart;
-      const end = filterInput.selectionEnd;
-      let val = filterInput.value;
-
-      if (char) {
-        filterInput.value = val.slice(0, start) + char + val.slice(end);
-        filterInput.setSelectionRange(start + char.length, start + char.length);
-      } else if (action === 'backspace') {
-        if (start === end && start > 0) {
-          filterInput.value = val.slice(0, start - 1) + val.slice(end);
-          filterInput.setSelectionRange(start - 1, start - 1);
-        } else if (start !== end) {
-          filterInput.value = val.slice(0, start) + val.slice(end);
-          filterInput.setSelectionRange(start, start);
-        }
-      } else if (action === 'space') {
-        filterInput.value = val.slice(0, start) + ' ' + val.slice(end);
-        filterInput.setSelectionRange(start + 1, start + 1);
-      } else if (action === 'clear') {
-        filterInput.value = '';
-        filterInput.setSelectionRange(0, 0);
-      } else if (action === 'switch-os') {
-        setKeyboardMode('standard');
-        return;
-      }
-
-      filterInput.focus();
-      applyView();
-    });
+    // 検索入力時のリアルタイム反映
+    document.getElementById('filter').addEventListener('input', applyView);
 
     init();
   </script>
