@@ -17,7 +17,8 @@
       --border: #000000;
       --line: #e5e5e5;
       --sub: #888888;
-      --cols-collapsed: 24% 14% 20% 42%;
+      /* 展開前の列幅: 単語(24%), 発音(20%), 品詞(14%), 意味(42%) */
+      --cols-collapsed: 24% 20% 14% 42%;
     }
 
     * {
@@ -138,7 +139,7 @@
       border-top: 1px solid var(--border);
     }
 
-    /* 見出し行（展開前の4列に対応） */
+    /* 見出し行（[単語] [発音] [品詞] [意味]） */
     .dict-header {
       display: grid;
       grid-template-columns: var(--cols-collapsed);
@@ -192,7 +193,7 @@
     }
 
     /* =========================================================
-       1. 展開前ビュー（4列テーブル配置）
+       1. 展開前ビュー（[単語] [発音] [品詞] [意味]）
        ========================================================= */
     .view-collapsed {
       display: grid;
@@ -201,7 +202,7 @@
     }
 
     .word-card.expanded .view-collapsed {
-      display: none; /* 展開時は非表示 */
+      display: none;
     }
 
     .cell-c {
@@ -227,6 +228,7 @@
       align-self: center;
     }
 
+    /* [品詞]（Class） */
     .cell-c-pos {
       font-size: 0.85rem;
       letter-spacing: 0.05em;
@@ -234,13 +236,14 @@
       align-self: center;
     }
 
+    /* [意味]（Meaning） */
     .cell-c-mean {
       white-space: pre-wrap;
       line-height: 1.6;
       align-self: center;
     }
 
-    /* 異なる品詞間の枠内横線 */
+    /* 異なる品詞間の枠内横線（品詞・意味の列にのみ入る） */
     .pos-divider-c {
       border-top: 1px solid var(--line);
     }
@@ -254,7 +257,7 @@
     }
 
     .word-card.expanded .view-expanded {
-      display: block; /* 展開時に表示 */
+      display: block;
       animation: fadeIn 0.2s ease forwards;
     }
 
@@ -352,7 +355,7 @@
 
     @media (max-width: 768px) {
       :root {
-        --cols-collapsed: 26% 16% 22% 36%;
+        --cols-collapsed: 26% 22% 16% 36%;
       }
       body {
         padding: 30px 16px;
@@ -406,11 +409,11 @@
   <div id="state" class="state">Loading</div>
 
   <div id="dict-container" class="dict-container" style="display: none;">
-    <!-- 見出し行 -->
+    <!-- 見出し行（[単語] [発音] [品詞] [意味]） -->
     <div class="dict-header">
       <div class="th-cell">Boli</div>
-      <div class="th-cell sortable" id="th-pos">Class</div>
       <div class="th-cell">Pronunciation</div>
+      <div class="th-cell sortable" id="th-pos">Class</div>
       <div class="th-cell">Meaning</div>
     </div>
     <!-- 単語リスト -->
@@ -631,12 +634,12 @@
         card.dataset.wordId = item.id;
 
         // =========================================================
-        // 1. 展開前ビュー（4列テーブル配置）
+        // 1. 展開前ビュー: [単語] [発音] [品詞] [意味]
         // =========================================================
         const viewCollapsed = document.createElement('div');
         viewCollapsed.className = 'view-collapsed';
 
-        // [単語]（全行スパンで上下中央）
+        // [単語]（列1: 全行スパンで上下中央）
         const wordC = document.createElement('div');
         wordC.className = 'cell-c cell-c-word';
         wordC.textContent = item.word;
@@ -645,26 +648,28 @@
         wordC.style.gridRow = `1 / span ${totalGroups}`;
         viewCollapsed.appendChild(wordC);
 
-        // [発音]（全行スパンで上下中央）
+        // [発音]（列2: 全行スパンで上下中央）
         const pronC = document.createElement('div');
         pronC.className = 'cell-c cell-c-pron';
         pronC.textContent = item.mainPron;
-        pronC.style.gridColumn = '3';
+        pronC.style.gridColumn = '2';
         pronC.style.gridRow = `1 / span ${totalGroups}`;
         viewCollapsed.appendChild(pronC);
 
-        // 各品詞行
+        // 各品詞行（列3: 品詞、列4: 意味）
         item.posGroups.forEach((group, gIndex) => {
           const rowNum = gIndex + 1;
           const isDivider = gIndex > 0;
 
+          // [品詞]（列3）
           const posC = document.createElement('div');
           posC.className = `cell-c cell-c-pos ${isDivider ? 'pos-divider-c' : ''}`;
           posC.textContent = group.pos;
-          posC.style.gridColumn = '2';
+          posC.style.gridColumn = '3';
           posC.style.gridRow = `${rowNum}`;
           viewCollapsed.appendChild(posC);
 
+          // [意味]（列4）
           const meanC = document.createElement('div');
           meanC.className = `cell-c cell-c-mean ${isDivider ? 'pos-divider-c' : ''}`;
           meanC.style.gridColumn = '4';
@@ -797,7 +802,7 @@
       if (sortState === 'none') {
         sortState = 'asc';
         btnSort.className = 'btn asc';
-      } else if (sortState === 'asc') {
+      } else if (sortState === 'desc') {
         sortState = 'desc';
         btnSort.className = 'btn desc';
       } else {
